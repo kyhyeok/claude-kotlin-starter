@@ -1,6 +1,6 @@
 # 이어서 작업하기
 
-> 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0012가 모든 핵심 결정의 근거입니다.
+> 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0013이 모든 핵심 결정의 근거입니다.
 
 ## 현재 상태 (2026-05-07)
 
@@ -8,7 +8,7 @@
 - ✅ **Day 2-1 완료**: V1 마이그레이션(members 테이블) 작성 + DB 부팅 검증 통과. Spring Boot 4 + Flyway 11 autoconfig 모듈 분리 함정 해결(ADR — `spring-boot-starter-flyway` 채택).
 - ✅ **Day 2-2 완료**: jOOQ codegen 활성화. DDLDatabase로 V*.sql을 직접 파싱(ADR-0010). jOOQ 버전을 Spring Boot BOM(3.19.32)에 정렬(ADR-0011). `./gradlew clean build` 통과.
 - ✅ **Day 2-3 완료**: JWT 어댑터(NimbusJwtIssuer, RedisRefreshTokenStore) + Member 도메인 모델 + Auth Use Case 4개(register/login/refresh/logout) + AuthApi + ApiControllerAdvice 도메인 예외 매핑. ADR-0012 박제. 단위 테스트 26개 통과(`./gradlew clean build`).
-- ⏳ **Day 2-4 대기**: 통합 테스트(Testcontainers + MockMvcTester) + REST Docs/Swagger.
+- ✅ **Day 2-4 완료**: `@IntegrationTest` 메타 어노테이션(@ServiceConnection PostgreSQL/Redis + MockMvcTester + AutoConfigureRestDocs) + Health/Auth 통합 테스트 + REST Docs → OpenAPI 3 → Swagger UI(/swagger-ui.html). NimbusJwtIssuer에 `jti` 클레임 추가(통합 테스트가 발견한 RT rotation 결함 fix). ADR-0013 박제. `./gradlew clean build` 통과(44개 테스트).
 
 ## Day 2 — 4단계 분할 계획
 
@@ -62,19 +62,24 @@
 - PasswordEncoder는 application에서 직접 의존(starter 단순성).
 - logout 본인 인증 필수(`@AuthenticationPrincipal Jwt`로 subject 추출).
 
-### Day 2-4. 통합 테스트 + Testcontainers + REST Docs/Swagger
+### Day 2-4. 통합 테스트 + Testcontainers + REST Docs/Swagger ✅
 
-- [ ] `src/test/.../api/health/GET_specs.kt` 재작성 (`MockMvcTester` + Testcontainers)
-- [ ] `src/test/.../api/auth/login/POST_specs.kt`
-- [ ] `src/test/resources/application-test.yml`에 Testcontainers PostgreSQL/Redis 자동 주입
-- [ ] REST Docs 어댑터 (`restdocs-api-spec`) 검증
-- [ ] `./gradlew openapi3` → OpenAPI 3 spec 생성 확인
-- [ ] Swagger UI 호스팅 통합
+- [x] `@IntegrationTest` 메타 어노테이션 — `@SpringBootTest + @AutoConfigureMockMvc + @AutoConfigureRestDocs + @ServiceConnection`(PostgreSQL/Redis Testcontainers).
+- [x] `src/test/.../api/health/GET_specs.kt`, `auth/{register,login,refresh,logout}/POST_specs.kt` — MockMvcTester 기반 통합 테스트.
+- [x] `application-test.yml` 정리 — `@ServiceConnection`이 datasource/redis URL 자동 주입.
+- [x] `restdocs-api-spec` 0.20.1 업그레이드 (Spring Boot 4 `ReadOnlyHttpHeaders` cast 호환 fix).
+- [x] `./gradlew build` → `build/api-spec/openapi3.yaml` 자동 생성 (snippet → OpenAPI 3 합성).
+- [x] Swagger UI 호스팅 — `/swagger-ui.html` + `OpenApiSpecController` (classpath/filesystem fallback).
+- [x] NimbusJwtIssuer에 `jti` 클레임 추가 — 같은 초에 같은 sub로 발급해도 토큰 unique → RT rotation 정상 작동.
+- [x] ADR-0013 박제.
 
-**가능한 함정**:
-- `restdocs-api-spec 0.19.4` ↔ Spring REST Docs 4.x 호환성
-- Spring Boot 4의 `MockMvcTester` API
-- Testcontainers `2.0.5`(transitive) ↔ `1.20.4`(직접) 버전 충돌
+**해결된 함정** (ADR-0013에 영구 박제):
+- Spring Boot 4 테스트 자동구성 모듈 분리 → `spring-boot-restdocs` + `spring-boot-webmvc-test` + `spring-boot-testcontainers` 명시적 추가.
+- Testcontainers 2.0의 모듈 rename → `org.testcontainers:testcontainers-postgresql`/`testcontainers-junit-jupiter` 좌표 변경.
+- restdocs-api-spec 0.19.4 ↔ Spring 7 `ReadOnlyHttpHeaders` cast → 0.20.1 업그레이드.
+- `OpenApi3Task` ↔ Gradle 9 configuration cache (Java 25 strong encapsulation) → task 단위 opt-out.
+- circular dep(`test ← copyOpenApiSpec ← openapi3 ← test`) → controller fallback으로 spec 노출, sourceSet output 미등록.
+- RT rotation 결함 → `jti` UUID 클레임으로 토큰 unique 보장.
 
 ## Day 3 이후 (선택)
 
@@ -114,6 +119,11 @@ cat NEXT_STEPS.md
 | jOOQ 생성 코드가 `Unresolved reference 'VERSION_3_20'` 등으로 컴파일 실패 | Spring Boot 4 BOM이 jOOQ를 3.19.32로 박는데 codegen만 3.20.x를 쓰면 신규 API가 런타임에 없음 | jOOQ 버전을 BOM에 정렬 (ADR-0011) — `libs.versions.toml`의 `jooq`를 BOM 버전과 동기화 |
 | `Task ':runKtlintCheckOverMainSourceSet' uses this output of task ':jooqCodegen' without declaring an explicit ... dependency` | Gradle 9 strict task validation. `sourceSets["main"].kotlin.srcDir(generated)` 등록 시 ktlint가 입력 의존성을 요구 | ktlint task에 `mustRunAfter("jooqCodegen") + dependsOn("jooqCodegen")` 명시 |
 | ktlint가 jOOQ 생성 코드를 검사해서 `Property name should start with a lowercase letter` 발생 | ktlint `filter { exclude("**/generated/**") }`는 source set baseDir 기준 상대화. srcDir로 추가된 절대 경로 디렉토리에는 매칭 안 됨 | 절대 경로 lambda — `exclude { it.file.absolutePath.contains("/build/generated/") }` |
+| `@AutoConfigureRestDocs`/`@AutoConfigureMockMvc`/`@ServiceConnection` import 안 됨 | Spring Boot 4.0에서 테스트 자동구성 모듈이 `spring-boot-restdocs`/`spring-boot-webmvc-test`/`spring-boot-testcontainers`로 분리. `spring-boot-test-autoconfigure`에서 빠짐 | 위 3개 모듈을 testImplementation에 명시적 추가 |
+| `Could not find org.testcontainers:postgresql:2.0.5` | Testcontainers 2.0부터 모듈 이름에 `testcontainers-` prefix 추가 (Spring Boot 4 BOM이 박은 버전) | `org.testcontainers:testcontainers-postgresql` / `testcontainers-junit-jupiter` 좌표 사용 + `libs.versions.toml` 버전을 BOM에 정렬 (ADR-0011 패턴) |
+| `ClassCastException: ReadOnlyHttpHeaders cannot be cast to Map` (REST Docs) | restdocs-api-spec 0.19.x의 `BasicSecurityHandler`가 Spring 7의 HttpHeaders를 Map으로 캐스팅. Spring 7부터 HttpHeaders가 Map 미구현 | `restdocs-api-spec` 0.20.1+로 업그레이드 |
+| `OpenApi3Task: configuration cache 직렬화 실패` | restdocs-api-spec 0.20.x의 OpenApi3Task가 Jackson StdDateFormat을 들고 있고, Java 25 strong encapsulation이 `java.text.DateFormat` reflection을 거부 | task 단위 `notCompatibleWithConfigurationCache(reason)` opt-out |
+| RT rotation이 같은 초에 통과 (보안 결함) | `NimbusJwtIssuer`가 같은 sub + iat/exp로 동일 JWT 반환 → Redis 활성 RT와 일치하여 두 번째 호출도 통과 | `jti` 클레임에 매 발급마다 UUID를 박아 토큰 unique 보장 |
 
 ## 결정 변경이 필요할 때
 
