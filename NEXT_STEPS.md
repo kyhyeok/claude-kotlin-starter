@@ -2,7 +2,7 @@
 
 > 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0013이 모든 핵심 결정의 근거입니다.
 
-## 현재 상태 (2026-05-07)
+## 현재 상태 (2026-05-08)
 
 - ✅ **Day 1 완료**: 빌드 검증 통과. Java 25 + Kotlin 2.3.21 + Spring Boot 4.0.6 호환성 검증.
 - ✅ **Day 2-1 완료**: V1 마이그레이션(members 테이블) 작성 + DB 부팅 검증 통과. Spring Boot 4 + Flyway 11 autoconfig 모듈 분리 함정 해결(ADR — `spring-boot-starter-flyway` 채택).
@@ -10,6 +10,7 @@
 - ✅ **Day 2-3 완료**: JWT 어댑터(NimbusJwtIssuer, RedisRefreshTokenStore) + Member 도메인 모델 + Auth Use Case 4개(register/login/refresh/logout) + AuthApi + ApiControllerAdvice 도메인 예외 매핑. ADR-0012 박제. 단위 테스트 26개 통과(`./gradlew clean build`).
 - ✅ **Day 2-4 완료**: `@IntegrationTest` 메타 어노테이션(@ServiceConnection PostgreSQL/Redis + MockMvcTester + AutoConfigureRestDocs) + Health/Auth 통합 테스트 + REST Docs → OpenAPI 3 → Swagger UI(/swagger-ui.html). NimbusJwtIssuer에 `jti` 클레임 추가(통합 테스트가 발견한 RT rotation 결함 fix). ADR-0013 박제. `./gradlew clean build` 통과(44개 테스트).
 - ✅ **Day 3-1 완료**: `scripts/rename-package.sh` — `<old> <new>` 명시 + dry-run + git cleanliness + BSD/GNU sed 분기 + bash 3.2 호환(`tr` 사용). *.kt/*.java/build.gradle.kts(group+jOOQ target+path 주석)/settings.gradle.kts/application*.yml 일괄 치환 + git mv 디렉토리 이동. end-to-end: 임시 cp → 스크립트 → `./gradlew clean build` 33초 통과(44개 테스트). ADR-0014 박제. README 5분 가이드 갱신.
+- ✅ **Day 3-2 완료**: CI 강화 — `concurrency.cancel-in-progress` + `permissions: contents: read` + `validate-wrappers: true` + 실패 시 test report artifact + Kover 0.9.8 도입(jOOQ 생성 코드 + Application 진입점 제외) + Codecov upload(`codecov-action@v5`, `fail_ci_if_error: false`) + Dependabot(gradle/github-actions weekly, Spring Boot/Kotlin/Testing 그룹 묶음). `./gradlew clean build koverXmlReport` 1분 19초 통과 — 44개 테스트 + `build/reports/kover/report.xml` 생성. ADR-0015 박제.
 
 ## Day 2 — 4단계 분할 계획
 
@@ -104,12 +105,26 @@
 - build.gradle.kts 주석의 path 형태 `com/kim/starter` 잔존 — sed에 path 패턴 추가.
 - `group = "com.kim"`이 단순 sed로 안 잡힘 — group 라인 별도 정규식.
 
-### Day 3-2. CI 강화 (다음 세션 우선순위) ⏳
+### Day 3-2. CI 강화 ✅
 
-- [ ] `.github/workflows/ci.yml` — Gradle wrapper validation action + `./gradlew build` + JDK 25 setup-java.
-- [ ] Codecov 설정 (test coverage 시각화).
-- [ ] Dependabot 설정 (Gradle/GitHub Actions 의존성).
-- [ ] `.github/workflows/codeql.yml` — Kotlin/Java 보안 스캔 (선택).
+`.github/workflows/ci.yml` 강화 + Kover + Codecov + Dependabot 도입 완료. ADR-0015 참고.
+
+**박힌 결정 요약**:
+- `concurrency.cancel-in-progress: true` + `permissions: contents: read` (PR 비용 절감 + 최소권한)
+- `gradle/actions/setup-gradle@v4`의 `validate-wrappers: true` (별도 wrapper-validation-action 거부)
+- 실패 시 `actions/upload-artifact@v4`로 `build/reports/tests/` + `build/test-results/` 보존(7일)
+- Kover 0.9.8 채택(Jacoco 거부 — Kotlin inline 정확도). Kotlin 2.3.21 호환 검증.
+- jOOQ 생성 코드(`adapter.persistence.jooq.*`) + `StarterApplicationKt` coverage 제외
+- Codecov: `codecov/codecov-action@v5` + `fail_ci_if_error: false` (coverage는 신호이지 게이트가 아님)
+- `./gradlew build koverXmlReport` 단일 step 실행(분리 시 Testcontainers 2번 → CI 시간 2배)
+- Dependabot: gradle + github-actions weekly(월요일 09:00 KST). Spring Boot/Kotlin/Testing 그룹 묶음 (BOM 정렬 패턴, ADR-0011 재사용)
+- CodeQL은 보류 — GHAS 라이선스 의존, 새 프로젝트가 보유 시 추가
+
+**검증된 함정 (ADR-0015에 영구 박제)**:
+- `koverXmlReport`를 분리 step → CI 시간 2배 (test 두 번 실행).
+- jOOQ 생성 코드가 srcDir로 등록되어 Kover가 자동 포함 → coverage 분모 부풀림. excludes filter 필수.
+- Dependabot 개별 PR이 Spring Boot BOM PR보다 먼저 머지 시 빌드 깨짐 → group 패턴으로 묶음.
+- Codecov 자체 장애 → `fail_ci_if_error: false`로 CI 게이트 분리.
 
 ### Day 3-3. Micrometer + Prometheus 검증 (대기)
 
