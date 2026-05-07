@@ -2,6 +2,7 @@
 .gradle/
 build/
 out/
+.kotlin/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -16,6 +17,9 @@ out/
 .project
 .settings/
 .classpath
+
+# Claude Code (개인 로컬 오버라이드만; 팀 공유 settings.json은 commit)
+.claude/settings.local.json
 
 # OS
 .DS_Store
