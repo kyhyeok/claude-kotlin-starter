@@ -102,6 +102,31 @@ LLM 행동 지침은 `.claude/rules/`에서 자동 로드. 자세한 가이드: 
 - 결정 근거: ADR-0008 · 사람용 가이드: `docs/git-workflow.md`.
 - main 직접 push는 starter-kit 작업 한정. 파생 프로젝트는 GitHub repo의 브랜치 보호로 차단(설정 항목은 ADR-0008 참고).
 
+## 10. 자기-검증 — architecture-reviewer
+
+**큰 변경 후 commit 전에 SOLID·DRY·KISS·YAGNI + 헥사고날 규칙을 자기-검증한다.**
+
+ArchUnit은 의존 방향 위반을 _빌드에서_ 잡지만, _의미 위반_(SRP 분쇄, 우연한 일치 추상화, `*ServiceImpl` 만능 서비스, 자체 `JwtAuthFilter` 같은 절대 금지 우회)은 못 잡는다. 이 갭을 `architecture-reviewer` 서브에이전트가 막는다.
+
+- **자동 호출 대상** — 다음을 추가/수정한 직후, `./gradlew clean build` 통과 후 commit 전:
+  - 새 도메인 슬라이스(`domain/<ctx>/`), 도메인 모델·VO·Exception
+  - 새 Use Case(`application/<ctx>/provided/`) 또는 `*Service` 구현
+  - 새 포트(`application/required/`) 또는 어댑터(`adapter/<tech>/`)
+  - `SecurityConfig` · `ApiControllerAdvice` 등 횡단 어댑터
+  - 새 통합 테스트(`api/<url>/<METHOD>_specs.kt`) 또는 `ArchitectureTest` 룰
+- **흐름**:
+  1. `./gradlew clean build` 통과 (ArchUnit + ktlint + 단위/통합 테스트)
+  2. `architecture-reviewer` 호출 → 보고는 심각도별(🚨 높음 / ⚠️ 중간 / 💡 낮음 / 📌 범위 밖 / ✅ 잘된 점)
+  3. 🚨 높음은 commit 전 수정. ⚠️ 중간은 ROI 판단. 💡 낮음·📌 범위 밖은 별도 PR/메모.
+- **거부 (호출하지 않음)**:
+  - 단순 오타·로그·이름 변경 같은 _외과적 변경_
+  - `ktlintFormat` 자동 수정
+  - 의존성 버전만 올리는 build 변경 (단, 새 모듈·플러그인 추가는 호출)
+- **참조 문서**:
+  - `.claude/agents/architecture-reviewer.md` — 에이전트 정의 + Self-check
+  - `.claude/skills/design-principles/SKILL.md` — 정전 진입점 + §5 신호 빠른 점검
+  - `docs/architecture-reference.md` — 이 프로젝트의 baseline 정답 파일 매핑
+
 ---
 
-**이 가이드가 작동하면:** ArchUnit 위반 없는 PR, `var` 외부 노출 없는 도메인, 하드코딩 PK 없는 테스트, 평문 시크릿 없는 yml, 비자명한 결정은 자동으로 ADR에 박제된다.
+**이 가이드가 작동하면:** ArchUnit 위반 없는 PR, `var` 외부 노출 없는 도메인, 하드코딩 PK 없는 테스트, 평문 시크릿 없는 yml, 비자명한 결정은 자동으로 ADR에 박제되고, **새 도메인 슬라이스는 commit 전 architecture-reviewer로 자기-검증된다**.
