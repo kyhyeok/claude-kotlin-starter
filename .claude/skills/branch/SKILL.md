@@ -1,7 +1,8 @@
 ---
 name: branch
 description: main 최신 상태에서 작업용 단기 브랜치를 분기하여 생성하고 원격 추적까지 설정합니다.
-allowed-tools: Bash, AskUserQuestion
+disable-model-invocation: true
+allowed-tools: Bash AskUserQuestion
 ---
 
 # Git 브랜치 생성 스킬

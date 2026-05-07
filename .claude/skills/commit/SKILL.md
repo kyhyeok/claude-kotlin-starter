@@ -1,7 +1,8 @@
 ---
 name: commit
 description: 변경사항을 확인하고 커밋 메시지를 작성하여 커밋 및 푸시합니다.
-allowed-tools: Bash, AskUserQuestion
+disable-model-invocation: true
+allowed-tools: Bash AskUserQuestion
 ---
 
 # Git 커밋 스킬

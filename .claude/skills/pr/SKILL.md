@@ -1,7 +1,8 @@
 ---
 name: pr
 description: 현재 브랜치를 main 대상으로 PR을 생성합니다. 브랜치명·커밋 히스토리에서 제목/본문을 자동 구성합니다.
-allowed-tools: Bash, AskUserQuestion
+disable-model-invocation: true
+allowed-tools: Bash AskUserQuestion
 ---
 
 # Pull Request 생성 스킬
