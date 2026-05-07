@@ -62,6 +62,11 @@ dependencies {
     // 로깅 (JSON 구조 로깅)
     implementation(libs.logstash.logback.encoder)
 
+    // Swagger UI (REST Docs로 만든 OpenAPI spec을 정적 호스팅).
+    // webjars-locator-core가 있으면 webjar 자원에 버전 없이 접근 가능 → 업그레이드 시 HTML 수정 불필요.
+    implementation(libs.swagger.ui)
+    implementation(libs.webjars.locator.core)
+
     // 로컬 개발 시 docker-compose 자동 기동 (PostgreSQL, Redis)
     developmentOnly(libs.spring.boot.docker.compose)
 
@@ -71,6 +76,10 @@ dependencies {
     }
     testImplementation(libs.mockk)
     testImplementation(libs.spring.mockk)
+    // Spring Boot 4.0의 분리된 테스트 자동구성 모듈 (libs.versions.toml 주석 참고).
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.spring.boot.webmvc.test)
+    testImplementation(libs.spring.boot.restdocs)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit)
     testImplementation(libs.archunit.junit5)
@@ -87,6 +96,9 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("spring.profiles.active", "test")
+    // REST Docs snippet 디렉토리를 test의 output으로 등록 → Gradle build cache가 snippet을 함께
+    // 캐시·복원하므로 cache hit 시에도 openapi3가 빈 spec을 만들지 않는다.
+    outputs.dir(layout.buildDirectory.dir("generated-snippets"))
 }
 
 // ============================================================
@@ -175,7 +187,7 @@ tasks.matching { it.name.startsWith("runKtlint") && it.name.endsWith("MainSource
 
 // ============================================================
 // REST Docs → OpenAPI 3 → Swagger UI
-// 테스트가 통과해야만 문서 생성 → 거짓 문서 불가능
+// 테스트가 통과해야만 문서 생성 → 거짓 문서 불가능 (snippet은 test task가 생성).
 // ============================================================
 openapi3 {
     setServer("http://localhost:8080")
@@ -183,4 +195,44 @@ openapi3 {
     description = "Spring Kotlin Starter Kit API"
     version = "0.0.1"
     format = "yaml"
+}
+
+// restdocs-api-spec 0.20.x의 OpenApi3Task는 Jackson StdDateFormat을 직접 들고 다녀
+// Gradle 9의 configuration cache 직렬화에서 java.text.DateFormat의 strong encapsulation에 막힘.
+// task 단위 opt-out으로 해결. plugin이 호환되면 제거 (issue: ePages-de/restdocs-api-spec).
+// openapi3 task는 plugin이 lazy하게 등록 → `matching`으로 등록 시점에 configure.
+tasks
+    .matching { it.name == "openapi3" }
+    .configureEach {
+        notCompatibleWithConfigurationCache(
+            "restdocs-api-spec 0.20.1: OpenApi3Task의 ObjectMapper(StdDateFormat)가 configuration cache 직렬화 미호환",
+        )
+        // snippets는 test가 생성하므로 의존성 명시.
+        dependsOn("test")
+    }
+
+// `./gradlew build` 한 번으로 OpenAPI spec까지 함께 갱신되도록 통합. 거짓 문서 방지의 핵심.
+// build → assemble + check 의 confining check chain이 아닌 build에 직접 hook하여 순환 회피.
+tasks.named("build") {
+    dependsOn("openapi3")
+}
+
+// Swagger UI가 호스팅할 spec은 OpenApiSpecController가 런타임에 노출한다.
+// 두 환경 분리:
+//   1. bootJar: copyOpenApiSpec → bootJar의 from()으로 BOOT-INF/classes/static/api-spec에 박음.
+//      sourceSet output에는 등록하지 않는다 — main classes에 결합하면
+//      `test → main classes → copyOpenApiSpec → openapi3 → test` 형태의 circular가 발생하기 때문.
+//   2. bootRun: spec은 jar에 없으나 controller가 build/api-spec/openapi3.yaml(filesystem)을 fallback.
+//      `./gradlew build` 한 번 돌리면 spec이 생성되어 그 이후 bootRun에서 보임.
+val copyOpenApiSpec by tasks.registering(Copy::class) {
+    dependsOn("openapi3")
+    from(layout.buildDirectory.dir("api-spec"))
+    into(layout.buildDirectory.dir("swagger-static/static/api-spec"))
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    dependsOn(copyOpenApiSpec)
+    from(layout.buildDirectory.dir("swagger-static")) {
+        into("BOOT-INF/classes")
+    }
 }

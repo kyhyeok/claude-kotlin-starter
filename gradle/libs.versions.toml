@@ -18,13 +18,21 @@ nimbus-jose-jwt = "10.0.2"
 # 로깅
 logstash-logback-encoder = "8.0"
 
+# Swagger UI (REST Docs로 생성한 OpenAPI spec을 호스팅)
+swagger-ui = "5.32.5"
+webjars-locator-core = "0.59"
+
 # 테스트
 mockk = "1.13.13"
-testcontainers = "1.20.4"
+# Testcontainers는 Spring Boot 4.0.6 BOM이 박은 2.0.5에 정렬한다 (ADR-0011 패턴 재사용).
+# 직접 의존성을 BOM과 어긋나게 두면 transitive 끌어올림으로 conflict 진단이 어려워짐.
+testcontainers = "2.0.5"
 # 1.4.2부터 Java 25 bytecode (class file major version 69) 파싱 지원.
 # 1.4.0/1.4.1은 Java 24까지만 지원 → "Couldn't import class" WARN 후 ArchTest 실패.
 archunit = "1.4.2"
-restdocs-api-spec = "0.19.4"
+# 0.20.0+에서 Spring Boot 4의 ReadOnlyHttpHeaders cast 호환성 fix.
+# 0.19.x는 BasicSecurityHandler가 HttpHeaders를 Map으로 캐스팅 → Spring 7에서 ClassCastException.
+restdocs-api-spec = "0.20.1"
 
 # 정적 분석
 # detekt: Kotlin 2.3 호환 GA 미출시로 임시 제외. ADR-0007 참고.
@@ -44,6 +52,14 @@ spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boo
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+# Spring Boot 4.0부터 테스트 자동구성 모듈이 분리됨 (org.springframework.boot.<tech>.test.autoconfigure 패키지로 이동).
+# - spring-boot-testcontainers: @ServiceConnection (org.springframework.boot.testcontainers.service.connection)
+# - spring-boot-webmvc-test: @AutoConfigureMockMvc + MockMvcTester (org.springframework.boot.webmvc.test.autoconfigure)
+# - spring-boot-restdocs: @AutoConfigureRestDocs (org.springframework.boot.restdocs.test.autoconfigure)
+# 3.x에서는 spring-boot-test-autoconfigure가 셋 모두를 포함했으나 4.0에서 분리.
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+spring-boot-webmvc-test = { module = "org.springframework.boot:spring-boot-webmvc-test" }
+spring-boot-restdocs = { module = "org.springframework.boot:spring-boot-restdocs" }
 spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-docker-compose" }
 
 # Kotlin
@@ -64,14 +80,21 @@ nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimb
 # 로깅
 logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
 
+# Swagger UI (정적 자원). webjars-locator-core는 버전 명시 없이 webjar 자원 접근 가능하게 한다.
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
+webjars-locator-core = { module = "org.webjars:webjars-locator-core", version.ref = "webjars-locator-core" }
+
 # Redis (Refresh Token Store)
 spring-data-redis = { module = "org.springframework.data:spring-data-redis" }
 
 # 테스트
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 spring-mockk = { module = "com.ninja-squad:springmockk", version = "4.0.2" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+# Testcontainers 2.0부터 모든 모듈 artifactId에 'testcontainers-' prefix 추가됨.
+# 1.x: org.testcontainers:postgresql / 2.x: org.testcontainers:testcontainers-postgresql
+# Spring Boot 4.0.6 BOM이 testcontainers 2.0.5를 박으므로 새 좌표를 따라야 한다.
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc" }
 restdocs-api-spec-mockmvc = { module = "com.epages:restdocs-api-spec-mockmvc", version.ref = "restdocs-api-spec" }
