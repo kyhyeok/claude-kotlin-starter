@@ -36,18 +36,23 @@ git log --oneline | head   # 어디까지 했는지 확인
 git clone <this-repo> my-new-project
 cd my-new-project
 
-# 2. 패키지 base name 변경 (com.kim.starter → com.yourorg.yourapp)
-#    추후 rename-package.sh 스크립트 제공 예정. Day 1에서는 IDE refactor 사용.
+# 2. 패키지 base name 일괄 치환 (com.kim.starter → com.yourorg.yourapp)
+#    *.kt, *.java(package-info), build.gradle.kts(group+jOOQ target),
+#    settings.gradle.kts, application*.yml + 디렉토리 이동(git mv)
+./scripts/rename-package.sh com.kim.starter com.yourorg.yourapp --dry-run  # 변경 대상 미리보기
+./scripts/rename-package.sh com.kim.starter com.yourorg.yourapp            # 실제 치환
+#    상세 결정사항: adr/0014-rename-package-script.md
 
 # 3. 로컬 인프라 (PostgreSQL + Redis)는 Spring Boot가 자동 기동
 #    docker desktop 실행만 해두면 됨
 
-# 4. 실행
-./gradlew bootRun
+# 4. 빌드 + 실행
+./gradlew clean build      # 컴파일 + 단위/통합 테스트 통과 검증
+./gradlew bootRun          # 새 group으로 부팅
 
 # 5. 검증
-curl http://localhost:8080/health
-# {"status":"UP","timestamp":"2026-05-06T..."}
+curl http://localhost:8080/health                # {"status":"UP",...}
+open http://localhost:8080/swagger-ui.html       # OpenAPI 3 문서
 ```
 
 ## 디렉토리 구조 (헥사고날)
@@ -85,9 +90,12 @@ src/main/kotlin/com/kim/starter/
 - [x] 첫 Flyway 마이그레이션(V1 members) + jOOQ codegen 활성화
 - [x] JWT 어댑터 (`NimbusJwtIssuer`, `RedisRefreshTokenStore`)
 - [x] Auth API (`POST /auth/{register,login,refresh,logout}`)
-- [ ] 통합 테스트 (Testcontainers + MockMvcTester)
-- [ ] Swagger UI 호스팅 통합
-- [ ] `rename-package.sh` 스크립트 (새 프로젝트 시작 자동화)
+- [x] 통합 테스트 (Testcontainers + MockMvcTester)
+- [x] Swagger UI 호스팅 통합 (REST Docs → OpenAPI 3 → `/swagger-ui.html`)
+- [x] `rename-package.sh` 스크립트 (새 프로젝트 시작 자동화 — ADR-0014)
+- [ ] CI 강화 (GitHub Actions + Codecov + Dependabot)
+- [ ] Micrometer + Prometheus 검증
+- [ ] detekt 2.0 GA 모니터링 (ADR-0007 재실행)
 
 ## 문서
 

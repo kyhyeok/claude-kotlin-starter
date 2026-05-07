@@ -9,6 +9,7 @@
 - ✅ **Day 2-2 완료**: jOOQ codegen 활성화. DDLDatabase로 V*.sql을 직접 파싱(ADR-0010). jOOQ 버전을 Spring Boot BOM(3.19.32)에 정렬(ADR-0011). `./gradlew clean build` 통과.
 - ✅ **Day 2-3 완료**: JWT 어댑터(NimbusJwtIssuer, RedisRefreshTokenStore) + Member 도메인 모델 + Auth Use Case 4개(register/login/refresh/logout) + AuthApi + ApiControllerAdvice 도메인 예외 매핑. ADR-0012 박제. 단위 테스트 26개 통과(`./gradlew clean build`).
 - ✅ **Day 2-4 완료**: `@IntegrationTest` 메타 어노테이션(@ServiceConnection PostgreSQL/Redis + MockMvcTester + AutoConfigureRestDocs) + Health/Auth 통합 테스트 + REST Docs → OpenAPI 3 → Swagger UI(/swagger-ui.html). NimbusJwtIssuer에 `jti` 클레임 추가(통합 테스트가 발견한 RT rotation 결함 fix). ADR-0013 박제. `./gradlew clean build` 통과(44개 테스트).
+- ✅ **Day 3-1 완료**: `scripts/rename-package.sh` — `<old> <new>` 명시 + dry-run + git cleanliness + BSD/GNU sed 분기 + bash 3.2 호환(`tr` 사용). *.kt/*.java/build.gradle.kts(group+jOOQ target+path 주석)/settings.gradle.kts/application*.yml 일괄 치환 + git mv 디렉토리 이동. end-to-end: 임시 cp → 스크립트 → `./gradlew clean build` 33초 통과(44개 테스트). ADR-0014 박제. README 5분 가이드 갱신.
 
 ## Day 2 — 4단계 분할 계획
 
@@ -83,30 +84,27 @@
 
 ## Day 3 이후
 
-### Day 3-1. `rename-package.sh` 스크립트 (다음 세션 우선순위) ⏳
+### Day 3-1. `rename-package.sh` 스크립트 ✅
 
-starter kit의 본질 — fork 후 5분 안에 새 프로젝트로 전환. `com.kim.starter` 패키지/디렉토리/`build.gradle.kts`의 group을 사용자 좌표(`com.yourorg.yourapp`)로 일괄 대체.
+`scripts/rename-package.sh` 완성 + ADR-0014 박제 + README "5분 시작" 갱신. 자세한 내용은 ADR-0014 참고.
 
-**진입 방식**: 4단계 분할 빌드 검증 (Day 1/2 동일 패턴).
+**박힌 결정 요약**:
+- argv 형식: `<old> <new>` 명시 (자동 검출 거부 — fork된 starter의 ambiguous base 위험).
+- 치환 범위: 코드 + 설정만 (`*.kt`, `*.java(package-info)`, `build.gradle.kts`, `settings.gradle.kts`, `src/**/application*.yml`). README/CLAUDE.md/ADR/NEXT_STEPS.md는 history 보존.
+- BSD/GNU sed 분기: `case "$(uname)" in Darwin) sed -i '' ;; *) sed -i ;; esac`.
+- bash 3.2 호환(macOS 기본): `mapfile` 미사용, `${VAR//./\/}` 대신 `printf | tr` 사용.
+- group 라인은 패키지 prefix(`com.kim`) 케이스를 위해 별도 정규식으로 통째 교체.
+- `git mv`로 디렉토리 히스토리 보존. 빈 부모는 `find -type d -empty -delete`.
+- 잔존 검증은 `grep -F`(fixed string) — regex `.`이 `/`를 매칭하는 거짓 양성 방지.
 
-| 단계 | 내용 | 검증 |
-|---|---|---|
-| 3-1-1 | 스크립트 골격(`scripts/rename-package.sh`) — argv 검증(`<old> <new>`), Git 워크트리 cleanliness 확인, dry-run 옵션. | `./scripts/rename-package.sh com.kim.starter com.example.foo --dry-run`로 변경 대상 파일 리스트 출력 검증 |
-| 3-1-2 | 패키지 선언/import 치환 — `*.kt` 파일의 `package com.kim.starter...` 와 `import com.kim.starter...` 를 `sed -i`로 대체. macOS BSD sed와 GNU sed 호환 분기(`sed -i ''` vs `sed -i`). | 작은 디렉토리 한 곳만 치환 후 `grep -r "com.kim.starter" src/` 결과 0건 확인 |
-| 3-1-3 | 디렉토리 이동 + `build.gradle.kts` group + jOOQ codegen target packageName 갱신 + `git mv`로 히스토리 보존. | `./gradlew clean build` 통과 (모든 import 정상 resolve) |
-| 3-1-4 | README 사용 가이드 + 셔뱅/실행권한 + ADR-0014 박제 + `./gradlew bootRun`까지 새 group으로 부팅 검증. | 빈 디렉토리에 fork → 스크립트 실행 → build → bootRun까지 1분 안에 통과 |
+**검증된 함정 (ADR-0014에 영구 박제)**:
+- `mapfile: command not found` — macOS bash 3.2 (GPL 회피). 미사용으로 회피.
+- `${VAR//./\/}`가 백슬래시 보존(`com\/kim\/starter`) — bash 3.2 quirk. `tr` 사용.
+- ArchUnit 레이어 마킹용 `package-info.java`가 누락 — find pattern을 `\(*.kt -o *.java\)`로 확장.
+- build.gradle.kts 주석의 path 형태 `com/kim/starter` 잔존 — sed에 path 패턴 추가.
+- `group = "com.kim"`이 단순 sed로 안 잡힘 — group 라인 별도 정규식.
 
-**예상 함정**:
-- macOS의 BSD `sed -i`는 빈 인자(`''`) 필요. Linux GNU sed는 받지 않음 → OS 분기 필요.
-- jOOQ `target.packageName`을 갱신하지 않으면 `./gradlew jooqCodegen`이 옛 패키지에 코드 생성 → 컴파일 깨짐.
-- `package com.kim.starter` 단순 치환은 OK이지만 `com.kim.starter`가 문자열·주석에 등장하는 위치(README, ADR, KDoc)도 같이 치환할지 결정 필요. 권장: 코드만 치환하고 ADR은 history로 보존.
-- `find -name "*.kt"`가 `build/generated`까지 잡으면 codegen 산출물이 dirty. 명시적으로 `-not -path "*/build/*"` 추가.
-
-**참고 파일** (재사용 가능 패턴):
-- splearn/commerce 같은 학습 출처 프로젝트는 rename 스크립트가 없음 → starter kit이 새로 정립.
-- jOOQ codegen 설정: `build.gradle.kts`의 `target { packageName = "..." }`.
-
-### Day 3-2. CI 강화 (대기)
+### Day 3-2. CI 강화 (다음 세션 우선순위) ⏳
 
 - [ ] `.github/workflows/ci.yml` — Gradle wrapper validation action + `./gradlew build` + JDK 25 setup-java.
 - [ ] Codecov 설정 (test coverage 시각화).
