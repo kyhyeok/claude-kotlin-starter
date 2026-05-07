@@ -81,7 +81,7 @@ git log --oneline | head -10
 cat NEXT_STEPS.md
 ```
 
-## 호환성 함정 빠른 참조 (Day 1 학습)
+## 호환성 함정 빠른 참조 (Day 1/2 학습)
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
@@ -91,6 +91,7 @@ cat NEXT_STEPS.md
 | `class-signature` ktlint 위반 | 생성자 인자 줄 분할 강제 | 줄 분할 + trailing comma, 또는 `./gradlew ktlintFormat` |
 | ArchUnit `Couldn't import class` | ASM이 Java N bytecode 미지원 | ArchUnit 최신 patch 버전 (Java 25는 1.4.2+) |
 | ArchUnit `Layer 'X' is empty` | ArchUnit 1.4.x strict | `.withOptionalLayers(true)` 옵트아웃 |
+| Flyway가 부팅 시 적용 X (로그도 0줄) | Spring Boot 4에서 Flyway autoconfig가 별도 모듈(`spring-boot-flyway`)로 분리. `flyway-core`만 직접 명시하면 autoconfig 미활성 | `implementation(libs.spring.boot.starter.flyway)` 추가 (autoconfig+core 함께) |
 
 ## 결정 변경이 필요할 때
 

@@ -47,7 +47,9 @@ dependencies {
     // 영속성 (JPA + jOOQ + Flyway + PostgreSQL)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.jooq)
-    implementation(libs.flyway.core)
+    // Spring Boot 4부터 Flyway autoconfig가 별도 모듈로 분리됨 (org.springframework.boot.flyway.autoconfigure).
+    // starter가 flyway-core + autoconfig를 함께 끌고 옴.
+    implementation(libs.spring.boot.starter.flyway)
     runtimeOnly(libs.flyway.postgresql)
     runtimeOnly(libs.postgresql)
 
