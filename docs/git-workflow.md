@@ -65,7 +65,21 @@ type: 한국어 제목 (50자 이내)
 본문 (선택)
 ```
 
-`type`은 `feat` / `fix` / `docs` / `style` / `refactor` / `test` / `chore`. 자세한 절차: `.claude/skills/commit/SKILL.md`.
+### type 목록 (Conventional Commits 1.0.0)
+
+`feat` · `fix` · `docs` · `style` · `refactor` · `perf` · `test` · `build` · `ci` · `chore` · `revert`
+
+> `hotfix/`는 **브랜치 프리픽스** 전용. 커밋 type은 `fix`로 통일 (Conventional Commits 명세에 `hotfix` type 없음).
+
+### Breaking change
+
+API·DB 스키마 등 호환성 깨는 변경은 type 뒤에 `!`:
+```
+feat!: 회원 ID 타입을 Long에서 UUID로 변경
+```
+또는 본문에 `BREAKING CHANGE: <설명>` 푸터.
+
+자세한 절차: `.claude/skills/commit/SKILL.md`.
 
 PR이 squash-merge되므로 작업 브랜치 내부의 중간 커밋 메시지는 정리 부담이 낮다. **최종 squash 커밋의 제목/본문이 main 히스토리에 박힌다** — PR 제목과 본문이 그대로 squash 커밋이 되므로 PR 메타데이터에 신경 쓸 것.
 
