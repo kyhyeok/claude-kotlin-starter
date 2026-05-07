@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.spring.dependency.management)
     // detekt: Kotlin 2.3 호환 GA 미출시로 임시 제외. 재도입 가이드: ADR-0007 참고.
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kover)
     alias(libs.plugins.restdocs.api.spec)
     alias(libs.plugins.flyway)
     alias(libs.plugins.jooq.codegen)
@@ -111,6 +112,24 @@ ktlint {
         // sourceSets에 srcDir로 등록한 build/generated/jooq/main에는 매칭되지 않는다.
         // 절대 경로 lambda로 명시적으로 제외한다.
         exclude { entry -> entry.file.absolutePath.contains("/build/generated/") }
+    }
+}
+
+// ============================================================
+// 커버리지 — Kover (ADR-0015)
+// 모든 Test task의 coverage를 자동 수집 → build/reports/kover/report.xml (JaCoCo 호환).
+// Codecov가 이 XML을 그대로 업로드한다.
+// ============================================================
+kover {
+    reports {
+        filters {
+            excludes {
+                // jOOQ 생성 코드는 coverage 대상 아님 — 사람이 작성하지 않는 코드.
+                packages("com.kim.starter.adapter.persistence.jooq", "com.kim.starter.adapter.persistence.jooq.*")
+                // Spring Boot 진입점 — main 메서드 한 줄짜리, 통합 테스트가 컨텍스트 부팅으로 자연 커버.
+                classes("com.kim.starter.StarterApplicationKt")
+            }
+        }
     }
 }
 

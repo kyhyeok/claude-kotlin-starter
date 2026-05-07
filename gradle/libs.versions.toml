@@ -40,6 +40,11 @@ restdocs-api-spec = "0.20.1"
 # detekt = "2.0.0"
 ktlint-gradle = "12.1.1"
 
+# 커버리지 — Kover (JetBrains 공식 Kotlin coverage)
+# Kotlin inline/suspend/default 인자를 정확히 측정. JaCoCo는 Kotlin inline에서 라인 오인식 한계.
+# Codecov는 kover XML(JaCoCo 호환 포맷)을 그대로 수용 → build/reports/kover/report.xml 업로드.
+kover = "0.9.8"
+
 [libraries]
 # Spring Boot starters (BOM이 버전 관리)
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
@@ -112,3 +117,4 @@ restdocs-api-spec = { id = "com.epages.restdocs-api-spec", version.ref = "restdo
 # detekt: ADR-0007에 따라 임시 제외. 재도입 시 아래 라인 활성화 (id는 2.0부터 dev.detekt).
 # detekt = { id = "dev.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
