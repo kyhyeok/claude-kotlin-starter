@@ -67,6 +67,7 @@ LLM 행동 지침은 `.claude/rules/`에서 자동 로드. 자세한 가이드: 
 **아래는 예외 없이 막는다.**
 
 - **YOU MUST** `ddl-auto: validate` 고정. `create`/`update` 금지. 스키마는 Flyway 단일 책임자.
+- **YOU MUST** `db/migration/*.sql` 직접 작성·수정·삭제 금지. DB 스키마는 사람 단일 책임, LLM은 read-only. 스키마 변경은 권장 SQL만 텍스트로 제안. `bootRun`/`flywayMigrate`/`psql` 등 DB 영향 명령도 LLM이 실행하지 않음 (ADR-0009).
 - **YOU MUST** 시크릿은 환경변수만. `application.yml`에 평문 commit 금지.
 - **YOU MUST** 자체 `JwtAuthFilter` 구현 금지. Spring Security OAuth2 Resource Server + Nimbus 사용.
 - **YOU MUST** JWT subject는 안정적인 PK만. 변경 가능한 영문 식별자(loginId 등) 금지.
