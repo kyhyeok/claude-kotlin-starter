@@ -81,12 +81,48 @@
 - circular dep(`test ← copyOpenApiSpec ← openapi3 ← test`) → controller fallback으로 spec 노출, sourceSet output 미등록.
 - RT rotation 결함 → `jti` UUID 클레임으로 토큰 unique 보장.
 
-## Day 3 이후 (선택)
+## Day 3 이후
 
-- [ ] `rename-package.sh` 스크립트 — 새 프로젝트 시작 시 `com.kim.starter` → `com.yourorg.yourapp`
-- [ ] CI 강화 (Gradle wrapper validation, Codecov, Dependabot)
-- [ ] Micrometer + Prometheus 검증
-- [ ] detekt 2.0 GA 출시 모니터링 → 재도입 (ADR-0007 체크리스트 따름)
+### Day 3-1. `rename-package.sh` 스크립트 (다음 세션 우선순위) ⏳
+
+starter kit의 본질 — fork 후 5분 안에 새 프로젝트로 전환. `com.kim.starter` 패키지/디렉토리/`build.gradle.kts`의 group을 사용자 좌표(`com.yourorg.yourapp`)로 일괄 대체.
+
+**진입 방식**: 4단계 분할 빌드 검증 (Day 1/2 동일 패턴).
+
+| 단계 | 내용 | 검증 |
+|---|---|---|
+| 3-1-1 | 스크립트 골격(`scripts/rename-package.sh`) — argv 검증(`<old> <new>`), Git 워크트리 cleanliness 확인, dry-run 옵션. | `./scripts/rename-package.sh com.kim.starter com.example.foo --dry-run`로 변경 대상 파일 리스트 출력 검증 |
+| 3-1-2 | 패키지 선언/import 치환 — `*.kt` 파일의 `package com.kim.starter...` 와 `import com.kim.starter...` 를 `sed -i`로 대체. macOS BSD sed와 GNU sed 호환 분기(`sed -i ''` vs `sed -i`). | 작은 디렉토리 한 곳만 치환 후 `grep -r "com.kim.starter" src/` 결과 0건 확인 |
+| 3-1-3 | 디렉토리 이동 + `build.gradle.kts` group + jOOQ codegen target packageName 갱신 + `git mv`로 히스토리 보존. | `./gradlew clean build` 통과 (모든 import 정상 resolve) |
+| 3-1-4 | README 사용 가이드 + 셔뱅/실행권한 + ADR-0014 박제 + `./gradlew bootRun`까지 새 group으로 부팅 검증. | 빈 디렉토리에 fork → 스크립트 실행 → build → bootRun까지 1분 안에 통과 |
+
+**예상 함정**:
+- macOS의 BSD `sed -i`는 빈 인자(`''`) 필요. Linux GNU sed는 받지 않음 → OS 분기 필요.
+- jOOQ `target.packageName`을 갱신하지 않으면 `./gradlew jooqCodegen`이 옛 패키지에 코드 생성 → 컴파일 깨짐.
+- `package com.kim.starter` 단순 치환은 OK이지만 `com.kim.starter`가 문자열·주석에 등장하는 위치(README, ADR, KDoc)도 같이 치환할지 결정 필요. 권장: 코드만 치환하고 ADR은 history로 보존.
+- `find -name "*.kt"`가 `build/generated`까지 잡으면 codegen 산출물이 dirty. 명시적으로 `-not -path "*/build/*"` 추가.
+
+**참고 파일** (재사용 가능 패턴):
+- splearn/commerce 같은 학습 출처 프로젝트는 rename 스크립트가 없음 → starter kit이 새로 정립.
+- jOOQ codegen 설정: `build.gradle.kts`의 `target { packageName = "..." }`.
+
+### Day 3-2. CI 강화 (대기)
+
+- [ ] `.github/workflows/ci.yml` — Gradle wrapper validation action + `./gradlew build` + JDK 25 setup-java.
+- [ ] Codecov 설정 (test coverage 시각화).
+- [ ] Dependabot 설정 (Gradle/GitHub Actions 의존성).
+- [ ] `.github/workflows/codeql.yml` — Kotlin/Java 보안 스캔 (선택).
+
+### Day 3-3. Micrometer + Prometheus 검증 (대기)
+
+- [ ] `application.yml`의 `management.endpoints.web.exposure.include`에 `prometheus` 이미 포함됨 → 의존성만 추가.
+- [ ] `io.micrometer:micrometer-registry-prometheus` 추가 + `/actuator/prometheus` 응답 검증 통합 테스트.
+- [ ] 도메인 메트릭 샘플(예: `MemberRegistrationService`의 회원 등록 카운터) — 새 프로젝트가 따라할 패턴.
+
+### Day 3-4. detekt 2.0 GA 모니터링 (외부 의존)
+
+- [ ] detekt 2.0 GA 출시 시 ADR-0007 체크리스트 재실행 → 재도입.
+- 모니터링: https://github.com/detekt/detekt/releases — Kotlin 2.3 호환 GA 출시 시점.
 
 ## 이어서 작업할 때 첫 5분 체크리스트
 
@@ -97,12 +133,22 @@ cd "/Users/kimyoonhyeok/QR 베이스가 될 프로젝트/spring-kotlin-starter"
 # 2. 빌드가 여전히 통과하는지 검증 (의존성 캐시 만료 시 재해결)
 ./gradlew clean build
 
-# 3. docker desktop 실행 확인 (Day 2-1 이후)
+# 3. docker desktop 실행 확인 (통합 테스트가 PostgreSQL/Redis Testcontainers를 띄움)
 docker info
 
 # 4. 어디까지 했는지 확인
 git log --oneline | head -10
 cat NEXT_STEPS.md
+```
+
+**Day 3 시작 시 추가 체크**:
+```bash
+# 5. Swagger UI 시각 확인 (선택, 사용자 직접 실행 — ADR-0009로 LLM 실행 금지)
+./gradlew bootRun  # → http://localhost:8080/swagger-ui.html
+
+# 6. 운영 jar 빌드 산출물 확인
+ls build/libs/                                # spring-kotlin-starter-*.jar
+unzip -l build/libs/*.jar | grep static       # swagger-ui.html + api-spec/openapi3.yaml
 ```
 
 ## 호환성 함정 빠른 참조 (Day 1/2 학습)
