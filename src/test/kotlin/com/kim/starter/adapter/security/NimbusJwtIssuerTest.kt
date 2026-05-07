@@ -91,4 +91,17 @@ class NimbusJwtIssuerTest {
         assertThat(token.issuedAt).isEqualTo(fixedNow)
         assertThat(token.expiresAt).isEqualTo(fixedNow.plus(Duration.ofMinutes(15)))
     }
+
+    @Test
+    fun `매 발급마다 jti 클레임에 unique UUID를 박는다`() {
+        val first = issuer.issueRefreshToken(subject = "42")
+        val second = issuer.issueRefreshToken(subject = "42")
+
+        val firstId = decoder.decode(first.value).id
+        val secondId = decoder.decode(second.value).id
+
+        assertThat(firstId).isNotBlank()
+        assertThat(secondId).isNotBlank().isNotEqualTo(firstId)
+        assertThat(first.value).isNotEqualTo(second.value) // jti 덕분에 같은 초에도 토큰이 다름
+    }
 }

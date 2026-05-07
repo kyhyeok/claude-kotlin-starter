@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 /**
  * Spring Security JwtEncoder + Nimbus 기반 HS256 토큰 발급(ADR-0003).
@@ -19,6 +20,9 @@ import java.time.Instant
  *   변경 가능한 영문 식별자(loginId 등)를 박지 않는다.
  * - Refresh Token은 `typ="refresh"` 클레임으로 Access Token과 구분 →
  *   AT가 RT로 오용되는 흐름을 차단한다.
+ * - 매 발급마다 RFC 7519의 `jti` 클레임에 UUID를 채워 토큰을 unique하게 만든다 →
+ *   같은 초에 같은 subject로 두 번 발급되어도 서로 다른 토큰이 나오므로 RT rotation 검증이
+ *   초 단위 시계 해상도에 좌우되지 않는다.
  */
 @Component
 class NimbusJwtIssuer(
@@ -43,6 +47,7 @@ class NimbusJwtIssuer(
         val claimsSet =
             JwtClaimsSet
                 .builder()
+                .id(UUID.randomUUID().toString())
                 .subject(subject)
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
