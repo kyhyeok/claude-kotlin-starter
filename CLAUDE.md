@@ -92,6 +92,15 @@ LLM 행동 지침은 `.claude/rules/`에서 자동 로드. 자세한 가이드: 
 
 코드 주석·커밋·문서·ADR은 **한국어**. 영어는 식별자와 외부 표준 용어만.
 
+## 9. Git 워크플로우
+
+**파생 프로젝트는 GitHub Flow + squash-merge.** 본 starter-kit 자체는 main-only(단일 작업자).
+
+- 브랜치: `<type>/<topic>` 단기 브랜치 → PR → squash-merge → main. type 프리픽스: `feature` / `fix` / `hotfix` / `refactor` / `chore` / `docs` / `test`.
+- 자동화 스킬: `commit` / `branch` / `pr`. 모두 `.claude/skills/`에 박제. 새 프로젝트는 즉시 사용 가능.
+- 결정 근거: ADR-0008 · 사람용 가이드: `docs/git-workflow.md`.
+- main 직접 push는 starter-kit 작업 한정. 파생 프로젝트는 GitHub repo의 브랜치 보호로 차단(설정 항목은 ADR-0008 참고).
+
 ---
 
 **이 가이드가 작동하면:** ArchUnit 위반 없는 PR, `var` 외부 노출 없는 도메인, 하드코딩 PK 없는 테스트, 평문 시크릿 없는 yml, 비자명한 결정은 자동으로 ADR에 박제된다.
