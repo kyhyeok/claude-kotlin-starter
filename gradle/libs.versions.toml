@@ -6,7 +6,10 @@ spring-boot = "4.0.6"
 spring-dependency-management = "1.1.7"
 
 # 영속성
-jooq = "3.20.6"
+# jOOQ는 Spring Boot 4.0.6 BOM이 박은 3.19.32에 정렬한다 (ADR-0011).
+# codegen plugin과 jooq-meta-extensions 모두 같은 버전을 사용 → 생성 코드와 런타임 API 불일치 차단.
+# 상향 조정 시: Spring Boot 차기 BOM이 3.20+를 채택했는지 먼저 확인.
+jooq = "3.19.32"
 flyway = "11.10.0"
 
 # 인증
@@ -52,6 +55,8 @@ postgresql = { module = "org.postgresql:postgresql" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+# DDLDatabase(SQL 파일 직접 파싱) — codegen 클래스패스 전용. 자세한 결정 근거: ADR-0010.
+jooq-meta-extensions = { module = "org.jooq:jooq-meta-extensions", version.ref = "jooq" }
 
 # JWT (Spring Security OAuth2 Resource Server에서 사용)
 nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }

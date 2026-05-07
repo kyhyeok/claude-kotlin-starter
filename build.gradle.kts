@@ -78,6 +78,9 @@ dependencies {
     testImplementation(libs.restdocs.api.spec.mockmvc)
     testImplementation(libs.spring.security.test)
 
+    // jOOQ codegen 전용 클래스패스 — DDLDatabase가 V*.sql을 직접 파싱(ADR-0010).
+    jooqCodegen(libs.jooq.meta.extensions)
+
     // detekt 룰셋: ADR-0007에 따라 임시 제외.
 }
 
@@ -92,41 +95,83 @@ tasks.withType<Test> {
 ktlint {
     version.set("1.5.0")
     filter {
-        exclude("**/generated/**")
-        exclude("**/build/**")
+        // glob 패턴은 source set의 baseDir 기준으로 상대화되므로,
+        // sourceSets에 srcDir로 등록한 build/generated/jooq/main에는 매칭되지 않는다.
+        // 절대 경로 lambda로 명시적으로 제외한다.
+        exclude { entry -> entry.file.absolutePath.contains("/build/generated/") }
     }
 }
 
 // ============================================================
-// jOOQ codegen (Flyway 적용 후 실행 — Day 2 활성화 예정)
-// 시작 시점에는 Flyway 마이그레이션이 없어서 codegen은 비활성화
-// 첫 마이그레이션 작성 후 jooq { } 블록으로 활성화하세요.
+// jOOQ codegen — Flyway SQL을 DDLDatabase로 직접 파싱한다 (ADR-0010).
+// DB/Docker 의존 없이 ./gradlew jooqCodegen 으로 실행 가능.
+// 출력: build/generated/jooq/main/com/kim/starter/adapter/persistence/jooq
 // ============================================================
-// jooq {
-//     configurations {
-//         create("main") {
-//             generationTool {
-//                 jdbc {
-//                     driver = "org.postgresql.Driver"
-//                     url = "jdbc:postgresql://localhost:5432/starter"
-//                     user = "starter"
-//                     password = "starter"
-//                 }
-//                 generator {
-//                     name = "org.jooq.codegen.KotlinGenerator"
-//                     database {
-//                         name = "org.jooq.meta.postgres.PostgresDatabase"
-//                         inputSchema = "public"
-//                     }
-//                     target {
-//                         packageName = "com.kim.starter.adapter.persistence.jooq"
-//                         directory = "build/generated/jooq/main"
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+jooq {
+    configuration {
+        generator {
+            name = "org.jooq.codegen.KotlinGenerator"
+            database {
+                name = "org.jooq.meta.extensions.ddl.DDLDatabase"
+                // V*.sql이 PostgreSQL 문법(BIGSERIAL, TIMESTAMPTZ, now() 등)을 사용 → POSTGRES 파서 강제.
+                // 미지정 시 H2 기본 파서가 PostgreSQL 전용 토큰을 거부할 수 있음.
+                properties.add(
+                    org.jooq.meta.jaxb
+                        .Property()
+                        .withKey("scripts")
+                        .withValue("src/main/resources/db/migration"),
+                )
+                properties.add(
+                    org.jooq.meta.jaxb
+                        .Property()
+                        .withKey("sort")
+                        .withValue("flyway"),
+                )
+                properties.add(
+                    org.jooq.meta.jaxb
+                        .Property()
+                        .withKey("parser.dialect")
+                        .withValue("POSTGRES"),
+                )
+                // V*.sql이 스키마를 명시하지 않음 → 기본 PUBLIC으로 매핑.
+                properties.add(
+                    org.jooq.meta.jaxb
+                        .Property()
+                        .withKey("unqualifiedSchema")
+                        .withValue("PUBLIC"),
+                )
+                // PostgreSQL의 unquoted identifier는 lowercase 정규화.
+                properties.add(
+                    org.jooq.meta.jaxb
+                        .Property()
+                        .withKey("defaultNameCase")
+                        .withValue("lower"),
+                )
+                inputSchema = "PUBLIC"
+            }
+            target {
+                packageName = "com.kim.starter.adapter.persistence.jooq"
+                directory = "build/generated/jooq/main"
+            }
+        }
+    }
+}
+
+// 컴파일/IDE가 생성된 jOOQ 소스를 인식하도록 source set에 등록.
+sourceSets["main"].kotlin.srcDir("build/generated/jooq/main")
+
+// 컴파일 전에 codegen이 항상 선행되도록 강제 — 신규 V*.sql 추가 시에도 자동 반영.
+tasks.named("compileKotlin") {
+    dependsOn("jooqCodegen")
+}
+
+// Gradle 9 strict task validation: main source set을 입력으로 잡는 task(ktlint 등)는
+// 생성 디렉토리에 대한 의존성을 명시해야 함. ktlint는 ktlint { filter } 블록으로 generated를 검사 제외하지만,
+// task input 자체는 여전히 source set과 연결되므로 명시적 mustRunAfter로 순서를 박는다.
+tasks.matching { it.name.startsWith("runKtlint") && it.name.endsWith("MainSourceSet") }.configureEach {
+    mustRunAfter("jooqCodegen")
+    dependsOn("jooqCodegen")
+}
 
 // ============================================================
 // REST Docs → OpenAPI 3 → Swagger UI

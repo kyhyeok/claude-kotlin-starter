@@ -1,11 +1,14 @@
 # 이어서 작업하기
 
-> 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0007이 모든 핵심 결정의 근거입니다.
+> 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0011이 모든 핵심 결정의 근거입니다.
 
-## 현재 상태 (2026-05-06)
+## 현재 상태 (2026-05-07)
 
 - ✅ **Day 1 완료**: 빌드 검증 통과. Java 25 + Kotlin 2.3.21 + Spring Boot 4.0.6 호환성 검증.
-- ⏳ **Day 2 대기**: 4단계 분할 진행 예정 (Flyway → jOOQ → JWT → 통합 테스트).
+- ✅ **Day 2-1 완료**: V1 마이그레이션(members 테이블) 작성 + DB 부팅 검증 통과. Spring Boot 4 + Flyway 11 autoconfig 모듈 분리 함정 해결(ADR — `spring-boot-starter-flyway` 채택).
+- ✅ **Day 2-2 완료**: jOOQ codegen 활성화. DDLDatabase로 V*.sql을 직접 파싱(ADR-0010). jOOQ 버전을 Spring Boot BOM(3.19.32)에 정렬(ADR-0011). `./gradlew clean build` 통과.
+- ⏳ **Day 2-3 대기**: JWT 어댑터 + Auth API.
+- ⏳ **Day 2-4 대기**: 통합 테스트 + REST Docs/Swagger.
 
 ## Day 2 — 4단계 분할 계획
 
@@ -20,17 +23,22 @@
 
 **가능한 함정**: Flyway 11.10.0 + Hibernate 7 + Spring Boot 4 BOM 호환성. 첫 부팅 시 `ddl-auto: validate`가 빈 스키마 거부 가능 → V1 마이그레이션 필수.
 
-### Day 2-2. jOOQ codegen 활성화
+### Day 2-2. jOOQ codegen 활성화 ✅
 
-- [ ] `build.gradle.kts`의 `jooq { ... }` 블록 주석 해제
-- [ ] Flyway가 적용된 DB 스키마 → jOOQ가 Kotlin 코드 생성
-- [ ] `build/generated/jooq/main/` 디렉토리 확인
-- [ ] 생성된 코드를 import해서 컴파일 통과 검증
+- [x] `build.gradle.kts`의 `jooq { ... }` 블록 활성화 — DDLDatabase 채택(ADR-0010, DB 의존 없이 V*.sql 직접 파싱)
+- [x] `./gradlew jooqCodegen` → `build/generated/jooq/main/com/kim/starter/adapter/persistence/jooq/`에 `Members.kt`, `MembersRecord.kt`, `Public.kt`, `Keys.kt`, `Indexes.kt`, `Tables.kt` 생성
+- [x] `./gradlew clean build` 통과 (compile + ktlint + 단위 테스트 + ArchUnit + bootJar)
 
-**가능한 함정**:
-- jOOQ codegen이 실행 시점에 PostgreSQL 연결 필요 → docker-compose 의존
-- `KotlinGenerator`의 Spring Boot 4 호환성 (jOOQ Spring Boot BOM이 3.19.32로 다운그레이드 한 점 주의)
-- 사용자 옵션: codegen을 별도 task로 분리 (Testcontainers 사용)
+**해결된 함정**:
+- jOOQ Spring Boot BOM이 3.19.32로 다운그레이드 → codegen 버전을 BOM에 정렬(ADR-0011)
+- Gradle 9 strict task validation: ktlint task가 generated 디렉토리 입력 의존성 요구 → `mustRunAfter("jooqCodegen") + dependsOn("jooqCodegen")`로 명시
+- ktlint glob `exclude("**/generated/**")`가 srcDir 추가된 generated 디렉토리에 미매칭 → 절대 경로 lambda(`exclude { it.file.absolutePath.contains("/build/generated/") }`)로 강화
+
+**컬럼 타입 매핑 검증** (Members.kt):
+- `BIGSERIAL` → `Long?` + `BIGINT.identity(true)` ✓
+- `VARCHAR(255)` → `String?` + length 보존 ✓
+- `TIMESTAMPTZ` → `OffsetDateTime?` ✓
+- COMMENT(한국어) → KDoc으로 보존 ✓
 
 ### Day 2-3. JWT 어댑터 + Auth API
 
@@ -92,6 +100,9 @@ cat NEXT_STEPS.md
 | ArchUnit `Couldn't import class` | ASM이 Java N bytecode 미지원 | ArchUnit 최신 patch 버전 (Java 25는 1.4.2+) |
 | ArchUnit `Layer 'X' is empty` | ArchUnit 1.4.x strict | `.withOptionalLayers(true)` 옵트아웃 |
 | Flyway가 부팅 시 적용 X (로그도 0줄) | Spring Boot 4에서 Flyway autoconfig가 별도 모듈(`spring-boot-flyway`)로 분리. `flyway-core`만 직접 명시하면 autoconfig 미활성 | `implementation(libs.spring.boot.starter.flyway)` 추가 (autoconfig+core 함께) |
+| jOOQ 생성 코드가 `Unresolved reference 'VERSION_3_20'` 등으로 컴파일 실패 | Spring Boot 4 BOM이 jOOQ를 3.19.32로 박는데 codegen만 3.20.x를 쓰면 신규 API가 런타임에 없음 | jOOQ 버전을 BOM에 정렬 (ADR-0011) — `libs.versions.toml`의 `jooq`를 BOM 버전과 동기화 |
+| `Task ':runKtlintCheckOverMainSourceSet' uses this output of task ':jooqCodegen' without declaring an explicit ... dependency` | Gradle 9 strict task validation. `sourceSets["main"].kotlin.srcDir(generated)` 등록 시 ktlint가 입력 의존성을 요구 | ktlint task에 `mustRunAfter("jooqCodegen") + dependsOn("jooqCodegen")` 명시 |
+| ktlint가 jOOQ 생성 코드를 검사해서 `Property name should start with a lowercase letter` 발생 | ktlint `filter { exclude("**/generated/**") }`는 source set baseDir 기준 상대화. srcDir로 추가된 절대 경로 디렉토리에는 매칭 안 됨 | 절대 경로 lambda — `exclude { it.file.absolutePath.contains("/build/generated/") }` |
 
 ## 결정 변경이 필요할 때
 
