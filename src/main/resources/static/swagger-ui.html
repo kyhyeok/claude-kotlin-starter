@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>Starter API — Swagger UI</title>
+  <link rel="stylesheet" href="/webjars/swagger-ui/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="/webjars/swagger-ui/swagger-ui-bundle.js"></script>
+  <script>
+    // build 시 build.gradle.kts의 copyOpenApiSpec task가 spec을 정적 자원으로 박는다.
+    // jar 안에 spec이 함께 들어가므로 부팅 직후 별도 설정 없이 동작한다.
+    window.ui = SwaggerUIBundle({
+      url: "/api-spec/openapi3.yaml",
+      dom_id: "#swagger-ui",
+      deepLinking: true,
+      presets: [SwaggerUIBundle.presets.apis],
+    });
+  </script>
+</body>
+</html>

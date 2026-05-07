@@ -40,6 +40,9 @@ class SecurityConfig {
                 it
                     .requestMatchers("/health", "/actuator/health/**")
                     .permitAll()
+                    // Swagger UI + OpenAPI spec — REST Docs로 만든 spec을 노출. webjars 자원도 함께.
+                    .requestMatchers("/swagger-ui.html", "/api-spec/**", "/webjars/**")
+                    .permitAll()
                     // logout은 본인 RT 폐기를 위해 인증 필요. 더 구체적인 매처를 먼저 두어야 한다.
                     .requestMatchers(HttpMethod.POST, "/auth/logout")
                     .authenticated()
