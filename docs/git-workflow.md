@@ -173,8 +173,11 @@ repo Settings → Branches → main 규칙:
 - [ ] Require approvals (≥1)
 - [ ] Require status checks to pass — `./gradlew clean build`
 - [ ] Require branches to be up to date before merging
+- [ ] **Require conversation resolution before merging** — 리뷰 코멘트 미해결 머지 차단
+- [ ] **Require linear history** — squash 정책과 정합 (merge commit 차단)
 - [ ] Allow squash merging만 활성화. merge commit / rebase merge 비활성화
 - [ ] Automatically delete head branches after merge
+- [ ] Block force pushes to main (기본 활성)
 
 ---
 
