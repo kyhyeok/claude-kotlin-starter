@@ -1,0 +1,53 @@
+# Dependabot 설정 (ADR-0015)
+# - gradle: build.gradle.kts + libs.versions.toml + gradle-wrapper의 의존성 갱신.
+# - github-actions: workflow의 actions/* 핀 갱신 (supply-chain 공격 표면 축소).
+# 주간 단위로 PR 생성 — 너무 자주 PR이 쌓이지 않도록 daily는 거부.
+version: 2
+updates:
+  # Gradle 의존성 (libs.versions.toml의 [versions]/[libraries]/[plugins] 자동 추적)
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - gradle
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+    # Spring Boot BOM이 박은 라이브러리는 BOM 갱신을 통해 일괄 따라간다 — 개별 PR을 쪼개지 않는다.
+    # ADR-0011: jOOQ는 BOM에 정렬, Testcontainers도 동일 패턴.
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "io.spring.dependency-management"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin:*"
+          - "org.jetbrains.kotlin.*"
+      testing:
+        patterns:
+          - "io.mockk:*"
+          - "com.ninja-squad:springmockk"
+          - "com.tngtech.archunit:*"
+
+  # GitHub Actions workflow 의존성 (actions/checkout, setup-java, gradle/actions 등)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: chore(ci)
+      include: scope
