@@ -1,0 +1,40 @@
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+config:
+  validation: true
+
+complexity:
+  active: true
+  LongMethod:
+    threshold: 60
+  LongParameterList:
+    functionThreshold: 6
+    constructorThreshold: 7
+  TooManyFunctions:
+    thresholdInClasses: 15
+    thresholdInInterfaces: 15
+
+naming:
+  active: true
+  FunctionNaming:
+    ignoreAnnotated:
+      - 'Test'
+      - 'ParameterizedTest'
+
+style:
+  active: true
+  MagicNumber:
+    ignoreNumbers: ['-1', '0', '1', '2', '100']
+    ignorePropertyDeclaration: true
+    ignoreAnnotation: true
+  ReturnCount:
+    max: 3
+  MaxLineLength:
+    maxLineLength: 140
+
+formatting:
+  active: true
+  android: false
+  autoCorrect: false

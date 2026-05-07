@@ -1,0 +1,18 @@
+spring:
+  # 테스트는 Testcontainers가 PostgreSQL/Redis를 띄움 → docker-compose 비활성화
+  docker:
+    compose:
+      enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+security:
+  jwt:
+    secret: test-secret-must-be-at-least-32-bytes-long-for-hs256
+    access-token-ttl: PT15M
+    refresh-token-ttl: P7D

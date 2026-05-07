@@ -1,0 +1,85 @@
+[versions]
+# 핵심 플랫폼
+# Kotlin 2.3.0부터 JVM 25 bytecode 지원. 2.2.x는 JVM 24까지만 지원.
+kotlin = "2.3.21"
+spring-boot = "4.0.6"
+spring-dependency-management = "1.1.7"
+
+# 영속성
+jooq = "3.20.6"
+flyway = "11.10.0"
+
+# 인증
+nimbus-jose-jwt = "10.0.2"
+
+# 로깅
+logstash-logback-encoder = "8.0"
+
+# 테스트
+mockk = "1.13.13"
+testcontainers = "1.20.4"
+# 1.4.2부터 Java 25 bytecode (class file major version 69) 파싱 지원.
+# 1.4.0/1.4.1은 Java 24까지만 지원 → "Couldn't import class" WARN 후 ArchTest 실패.
+archunit = "1.4.2"
+restdocs-api-spec = "0.19.4"
+
+# 정적 분석
+# detekt: Kotlin 2.3 호환 GA 미출시로 임시 제외. ADR-0007 참고.
+# detekt 2.0 GA 출시 시 아래 라인을 활성화하고 build.gradle.kts에서 plugin 활성화.
+# detekt = "2.0.0"
+ktlint-gradle = "12.1.1"
+
+[libraries]
+# Spring Boot starters (BOM이 버전 관리)
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+spring-boot-starter-jooq = { module = "org.springframework.boot:spring-boot-starter-jooq" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-docker-compose" }
+
+# Kotlin
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+
+# DB
+postgresql = { module = "org.postgresql:postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+
+# JWT (Spring Security OAuth2 Resource Server에서 사용)
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }
+
+# 로깅
+logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash-logback-encoder" }
+
+# Redis (Refresh Token Store)
+spring-data-redis = { module = "org.springframework.data:spring-data-redis" }
+
+# 테스트
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+spring-mockk = { module = "com.ninja-squad:springmockk", version = "4.0.2" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc" }
+restdocs-api-spec-mockmvc = { module = "com.epages:restdocs-api-spec-mockmvc", version.ref = "restdocs-api-spec" }
+spring-security-test = { module = "org.springframework.security:spring-security-test" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
+jooq-codegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+restdocs-api-spec = { id = "com.epages.restdocs-api-spec", version.ref = "restdocs-api-spec" }
+# detekt: ADR-0007에 따라 임시 제외. 재도입 시 아래 라인 활성화 (id는 2.0부터 dev.detekt).
+# detekt = { id = "dev.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }

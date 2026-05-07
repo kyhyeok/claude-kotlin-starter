@@ -1,0 +1,32 @@
+# Build
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.fleet/
+.project
+.settings/
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local
+*.log
+*.env
+.env.local
+.env.*.local
+
+# Generated
+src/main/generated/
+**/generated/
