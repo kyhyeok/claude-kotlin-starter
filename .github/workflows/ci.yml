@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+# 같은 브랜치/PR의 이전 실행은 자동 취소 (PR 연속 push 시 비용 절감).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 최소 권한 원칙. 필요 시 step/job 단위로 명시적 상승.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,8 +27,12 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      # gradle/actions/setup-gradle@v4는 gradle wrapper checksum을 자동 검증한다.
+      # cache는 Gradle home + wrapper 디렉토리에 자동 적용.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
 
       - name: ktlint
         run: ./gradlew ktlintCheck
@@ -28,5 +41,28 @@ jobs:
       # - name: detekt
       #   run: ./gradlew detekt
 
-      - name: Build & Test
-        run: ./gradlew build --info
+      # build에 koverXmlReport를 함께 실행 — 한 번의 test 실행으로 coverage까지 수집.
+      # 분리 실행 시 Testcontainers를 두 번 띄워야 하므로 CI 시간 2배.
+      - name: Build & Test (with coverage)
+        run: ./gradlew build koverXmlReport --info
+
+      # 실패 시 테스트 리포트를 artifact로 업로드 — Testcontainers 통합 테스트 디버깅용.
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/
+            build/test-results/
+          retention-days: 7
+
+      # Codecov upload — kover XML(JaCoCo 호환)을 그대로 수용.
+      # public repo는 token 불필요. private repo는 secrets.CODECOV_TOKEN 설정 필요.
+      - name: Upload coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@v5
+        with:
+          files: build/reports/kover/report.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false  # public repo + token 미설정에서도 CI는 통과시킨다.
