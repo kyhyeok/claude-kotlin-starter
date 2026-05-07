@@ -1,5 +1,9 @@
 package com.kim.starter.adapter.webapi
 
+import com.kim.starter.domain.member.DuplicateEmailException
+import com.kim.starter.domain.member.InvalidCredentialException
+import com.kim.starter.domain.member.MemberNotActiveException
+import com.kim.starter.domain.member.MemberNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -11,13 +15,25 @@ import java.time.Instant
 /**
  * RFC 7807 ProblemDetail 기반 표준 에러 응답.
  *
- * 도메인 예외는 별도 핸들러를 추가해 매핑한다.
- * 예: @ExceptionHandler(DuplicateEmailException::class) → CONFLICT
+ * 도메인 예외 → HTTP 상태 매핑은 모두 이곳에서 단일 책임으로 처리한다.
+ * 도메인 코드는 의미만 박고, 트랜스포트 변환은 어댑터에서.
  */
 @RestControllerAdvice
 class ApiControllerAdvice(
     private val clock: Clock,
 ) : ResponseEntityExceptionHandler() {
+    @ExceptionHandler(DuplicateEmailException::class)
+    fun handleDuplicateEmail(ex: DuplicateEmailException): ProblemDetail = problem(HttpStatus.CONFLICT, ex)
+
+    @ExceptionHandler(MemberNotFoundException::class)
+    fun handleMemberNotFound(ex: MemberNotFoundException): ProblemDetail = problem(HttpStatus.NOT_FOUND, ex)
+
+    @ExceptionHandler(InvalidCredentialException::class)
+    fun handleInvalidCredential(ex: InvalidCredentialException): ProblemDetail = problem(HttpStatus.UNAUTHORIZED, ex)
+
+    @ExceptionHandler(MemberNotActiveException::class)
+    fun handleMemberNotActive(ex: MemberNotActiveException): ProblemDetail = problem(HttpStatus.FORBIDDEN, ex)
+
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException): ProblemDetail = problem(HttpStatus.BAD_REQUEST, ex)
 

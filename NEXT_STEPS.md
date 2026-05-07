@@ -1,14 +1,14 @@
 # 이어서 작업하기
 
-> 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0011이 모든 핵심 결정의 근거입니다.
+> 새 세션 시작 시 이 파일과 `README.md`를 먼저 읽으세요. ADR 0001~0012가 모든 핵심 결정의 근거입니다.
 
 ## 현재 상태 (2026-05-07)
 
 - ✅ **Day 1 완료**: 빌드 검증 통과. Java 25 + Kotlin 2.3.21 + Spring Boot 4.0.6 호환성 검증.
 - ✅ **Day 2-1 완료**: V1 마이그레이션(members 테이블) 작성 + DB 부팅 검증 통과. Spring Boot 4 + Flyway 11 autoconfig 모듈 분리 함정 해결(ADR — `spring-boot-starter-flyway` 채택).
 - ✅ **Day 2-2 완료**: jOOQ codegen 활성화. DDLDatabase로 V*.sql을 직접 파싱(ADR-0010). jOOQ 버전을 Spring Boot BOM(3.19.32)에 정렬(ADR-0011). `./gradlew clean build` 통과.
-- ⏳ **Day 2-3 대기**: JWT 어댑터 + Auth API.
-- ⏳ **Day 2-4 대기**: 통합 테스트 + REST Docs/Swagger.
+- ✅ **Day 2-3 완료**: JWT 어댑터(NimbusJwtIssuer, RedisRefreshTokenStore) + Member 도메인 모델 + Auth Use Case 4개(register/login/refresh/logout) + AuthApi + ApiControllerAdvice 도메인 예외 매핑. ADR-0012 박제. 단위 테스트 26개 통과(`./gradlew clean build`).
+- ⏳ **Day 2-4 대기**: 통합 테스트(Testcontainers + MockMvcTester) + REST Docs/Swagger.
 
 ## Day 2 — 4단계 분할 계획
 
@@ -40,16 +40,27 @@
 - `TIMESTAMPTZ` → `OffsetDateTime?` ✓
 - COMMENT(한국어) → KDoc으로 보존 ✓
 
-### Day 2-3. JWT 어댑터 + Auth API
+### Day 2-3. JWT 어댑터 + Auth API ✅
 
-- [ ] `adapter/security/NimbusJwtIssuer.kt` (JwtIssuer 포트 구현)
-- [ ] `adapter/security/RedisRefreshTokenStore.kt` (RefreshTokenStore 포트 구현)
-- [ ] `application/auth/provided/AuthService.kt` (Use Case 인터페이스)
-- [ ] `application/auth/AuthApplicationService.kt` (구현)
-- [ ] `adapter/webapi/AuthApi.kt`: `/auth/login`, `/auth/refresh`, `/auth/logout`
-- [ ] AccessTokenCarrier, RefreshTokenRequest 등 DTO
+- [x] `adapter/security/JwtProperties.kt` (`@ConfigurationProperties`로 secret/TTL 통합 바인딩)
+- [x] `adapter/security/NimbusJwtIssuer.kt` (HS256 + `typ` 클레임으로 AT/RT 구분)
+- [x] `adapter/security/RedisRefreshTokenStore.kt` (`auth:refresh:{subject}` → RT, subject당 1개 활성)
+- [x] `domain/member/{Email, MemberStatus, Member, MemberExceptions}.kt` (도메인 모델 패턴 시연)
+- [x] `application/required/MemberRepository.kt` + `adapter/persistence/{MemberSpringDataRepository, JpaMemberRepository}.kt`
+- [x] `application/member/provided/MemberRegister.kt` + `MemberRegistrationService.kt`
+- [x] `application/auth/provided/{LoginAuthenticator, TokenRefresher, LogoutHandler}.kt` + `AuthenticationService.kt`
+- [x] `adapter/webapi/auth/{AuthApi, AuthDtos}.kt` (register/login/refresh/logout, OAuth 2.0 응답 컨벤션)
+- [x] `ApiControllerAdvice` 도메인 예외 매핑(Duplicate/InvalidCredential/MemberNotActive/MemberNotFound)
+- [x] SecurityConfig: logout만 authenticated, 나머지 `/auth/**` permitAll
+- [x] 단위 테스트 26개(`./gradlew clean build` 통과)
+- [x] ADR-0012로 결정사항 박제
 
-**핵심**: 알고리즘 HS256, Access 15분, Refresh 7일. Spring Security `JwtEncoder`/`JwtDecoder` 사용. RT subject에 가변 식별자(loginId 등) 주입 금지.
+**박힌 결정 요약**:
+- HS256 / Access 15분 / Refresh 7일 (ADR-0003).
+- RT는 JWT(`typ=refresh`) + Redis rotation, subject당 1개 활성. JWT subject = `Member.id` String 표현.
+- Member 영속성: JPA(`@Entity` 도메인 모델), Repository 포트 분리.
+- PasswordEncoder는 application에서 직접 의존(starter 단순성).
+- logout 본인 인증 필수(`@AuthenticationPrincipal Jwt`로 subject 추출).
 
 ### Day 2-4. 통합 테스트 + Testcontainers + REST Docs/Swagger
 

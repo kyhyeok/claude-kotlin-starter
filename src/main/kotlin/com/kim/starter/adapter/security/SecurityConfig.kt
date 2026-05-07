@@ -2,9 +2,9 @@ package com.kim.starter.adapter.security
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.factory.PasswordEncoderFactories
@@ -40,8 +40,11 @@ class SecurityConfig {
                 it
                     .requestMatchers("/health", "/actuator/health/**")
                     .permitAll()
+                    // logout은 본인 RT 폐기를 위해 인증 필요. 더 구체적인 매처를 먼저 두어야 한다.
+                    .requestMatchers(HttpMethod.POST, "/auth/logout")
+                    .authenticated()
                     .requestMatchers("/auth/**")
-                    .permitAll() // 로그인/토큰 발급은 토큰 없이 호출
+                    .permitAll() // register/login/refresh: 토큰 없이 호출
                     .anyRequest()
                     .authenticated()
             }.oauth2ResourceServer { rs ->
@@ -49,18 +52,14 @@ class SecurityConfig {
             }.build()
 
     @Bean
-    fun jwtDecoder(
-        @Value("\${security.jwt.secret}") secret: String,
-    ): JwtDecoder {
-        val key = SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
+    fun jwtDecoder(properties: JwtProperties): JwtDecoder {
+        val key = SecretKeySpec(properties.secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
         return NimbusJwtDecoder.withSecretKey(key).build()
     }
 
     @Bean
-    fun jwtEncoder(
-        @Value("\${security.jwt.secret}") secret: String,
-    ): JwtEncoder {
-        val key = SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
+    fun jwtEncoder(properties: JwtProperties): JwtEncoder {
+        val key = SecretKeySpec(properties.secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
         return NimbusJwtEncoder(ImmutableSecret<SecurityContext>(key))
     }
 

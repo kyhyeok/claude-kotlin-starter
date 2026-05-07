@@ -82,9 +82,10 @@ src/main/kotlin/com/kim/starter/
 
 ## 다음 작업 (Day 2 이후)
 
-- [ ] 첫 Flyway 마이그레이션 작성 → jOOQ codegen 활성화
-- [ ] JWT 어댑터 구현 (`NimbusJwtIssuer`, `RedisRefreshTokenStore`)
-- [ ] Auth API (`/auth/login`, `/auth/refresh`)
+- [x] 첫 Flyway 마이그레이션(V1 members) + jOOQ codegen 활성화
+- [x] JWT 어댑터 (`NimbusJwtIssuer`, `RedisRefreshTokenStore`)
+- [x] Auth API (`POST /auth/{register,login,refresh,logout}`)
+- [ ] 통합 테스트 (Testcontainers + MockMvcTester)
 - [ ] Swagger UI 호스팅 통합
 - [ ] `rename-package.sh` 스크립트 (새 프로젝트 시작 자동화)
 
