@@ -2,9 +2,6 @@ spring:
   application:
     name: spring-kotlin-starter
 
-  # ============================================================
-  # PostgreSQL (docker-compose 자동 기동)
-  # ============================================================
   datasource:
     url: jdbc:postgresql://localhost:5432/starter
     username: starter
@@ -16,51 +13,36 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate # ★ 절대 create/update 사용 금지. Flyway가 단일 스키마 책임자.
+      # ★ create/update 절대 금지. Flyway 단일 책임 (CLAUDE.md §6).
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
         jdbc.time_zone: UTC
         format_sql: true
 
-  # ============================================================
-  # Flyway — 스키마 단일 책임자
-  # ============================================================
   flyway:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
 
-  # ============================================================
-  # Redis (Refresh Token Store)
-  # ============================================================
   data:
     redis:
       host: localhost
       port: 6379
 
-  # ============================================================
-  # docker-compose 자동 lifecycle (Spring Boot 3.1+)
-  # ============================================================
   docker:
     compose:
       lifecycle-management: start_only
       file: compose.yaml
 
-# ============================================================
-# JWT 설정
-# ============================================================
 security:
   jwt:
-    # ★ 운영에서는 반드시 환경변수 JWT_SECRET 으로 주입 (256bit 이상).
-    # ★ 이 default 값은 로컬 개발용. git에 진짜 시크릿을 절대 commit 금지 (ADR-0004).
+    # ★ 운영은 환경변수 JWT_SECRET (256bit 이상). 평문 commit 금지 (ADR-0004).
     secret: ${JWT_SECRET:dev-only-secret-change-me-in-production-must-be-at-least-32-bytes}
-    access-token-ttl: PT15M # ISO-8601 Duration: 15분
-    refresh-token-ttl: P7D # 7일
+    access-token-ttl: PT15M
+    refresh-token-ttl: P7D
 
-# ============================================================
-# Actuator
-# ============================================================
 management:
   endpoints:
     web:

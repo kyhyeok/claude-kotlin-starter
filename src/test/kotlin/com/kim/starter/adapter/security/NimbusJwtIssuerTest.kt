@@ -17,23 +17,13 @@ import java.time.Instant
 import java.time.ZoneOffset
 import javax.crypto.spec.SecretKeySpec
 
-/**
- * NimbusJwtIssuer 단위 테스트.
- *
- * Spring 컨텍스트를 띄우지 않는다. 토큰을 발급한 뒤 JwtDecoder로 직접 파싱하여
- * subject / exp / typ 클레임을 검증한다.
- */
 @DisplayName("NimbusJwtIssuer")
 class NimbusJwtIssuerTest {
     private val secret = "test-secret-must-be-at-least-32-bytes-long-for-hs256"
     private val key = SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256")
     private val encoder = NimbusJwtEncoder(ImmutableSecret<SecurityContext>(key))
 
-    /**
-     * fixed clock 기반 발급 토큰을 시스템 실시간 시계로 검증하면
-     * `JwtTimestampValidator`가 만료/iat 미스매치로 거부한다.
-     * 단위 테스트는 서명/클레임 파싱만 검증하므로 timestamp validator를 비활성화한다.
-     */
+    // fixed clock 발급 토큰을 system clock으로 검증하면 JwtTimestampValidator가 거부 → 단위 테스트는 비활성화.
     private val decoder =
         NimbusJwtDecoder
             .withSecretKey(key)
@@ -94,13 +84,6 @@ class NimbusJwtIssuerTest {
     }
 
     @Test
-    fun `발급 토큰 문자열은 JWT 형식을 따른다`() {
-        val token = issuer.issueAccessToken(subject = "42")
-
-        assertThat(token.value).satisfies(JwtAssertions.conformsToJwtFormat())
-    }
-
-    @Test
     fun `매 발급마다 jti 클레임에 unique UUID를 박는다`() {
         val first = issuer.issueRefreshToken(subject = "42")
         val second = issuer.issueRefreshToken(subject = "42")
@@ -110,6 +93,13 @@ class NimbusJwtIssuerTest {
 
         assertThat(firstId).isNotBlank()
         assertThat(secondId).isNotBlank().isNotEqualTo(firstId)
-        assertThat(first.value).isNotEqualTo(second.value) // jti 덕분에 같은 초에도 토큰이 다름
+        assertThat(first.value).isNotEqualTo(second.value)
+    }
+
+    @Test
+    fun `발급 토큰 문자열은 JWT 형식을 따른다`() {
+        val token = issuer.issueAccessToken(subject = "42")
+
+        assertThat(token.value).satisfies(JwtAssertions.conformsToJwtFormat())
     }
 }

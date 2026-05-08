@@ -5,19 +5,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ThrowingConsumer
 import java.time.OffsetDateTime
 
-/**
- * Member 도메인 단언 (CLAUDE.md §5).
- *
- * AssertJ의 `satisfies(...)`와 조합하여 한 줄로 도메인 객체의 주요 필드를 검증한다.
- *
- * 사용:
- * ```
- * assertThat(member).satisfies(
- *     MemberAssertions.hasEmail(email),
- *     MemberAssertions.hasTimestamps(now),
- * )
- * ```
- */
 object MemberAssertions {
     fun hasEmail(email: String): ThrowingConsumer<Member> =
         ThrowingConsumer { member ->

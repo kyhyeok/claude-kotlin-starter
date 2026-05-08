@@ -15,16 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
-/**
- * 인증 API.
- *
- * - register/login/refresh: 토큰 없이 호출 가능 (`SecurityConfig.permitAll`).
- * - logout: 유효한 Access Token 필수. SecurityContext의 [Jwt.subject]로 본인 식별 →
- *   클라이언트가 임의의 memberId를 폐기하는 경로를 차단한다.
- *
- * 도메인 예외(Duplicate/InvalidCredential) → HTTP 매핑은
- * [com.kim.starter.adapter.webapi.ApiControllerAdvice]에서 단일 책임으로 처리.
- */
 @RestController
 @RequestMapping("/auth")
 class AuthApi(
@@ -69,6 +59,7 @@ class AuthApi(
         return TokenResponse.from(tokens)
     }
 
+    // SecurityContext의 Jwt.subject로 본인 식별 → 임의 memberId 폐기 차단.
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun logout(

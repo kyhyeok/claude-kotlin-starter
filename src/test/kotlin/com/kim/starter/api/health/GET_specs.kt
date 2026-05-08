@@ -8,13 +8,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.assertj.MockMvcTester
 
-/**
- * `GET /health` 통합 테스트.
- *
- * - 익명 호출 허용([com.kim.starter.adapter.security.SecurityConfig]에서 permitAll).
- * - timestamp는 [java.time.Clock] 빈을 통해 결정되며 통합 테스트는 system clock 사용 → 값 자체는
- *   non-blank만 검증한다(시점 의존 자체가 통합 테스트의 검증 포인트가 아니므로).
- */
 @IntegrationTest
 @DisplayName("GET /health")
 class `GET_specs`(

@@ -8,17 +8,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
-/**
- * REST Docs로 생성된 OpenAPI 3 spec을 호스팅한다.
- *
- * 두 가지 경로를 fallback 순으로 시도한다:
- * 1. `static/api-spec/openapi3.yaml` (classpath) — bootJar에 박힌 경우. 운영/배포 환경.
- * 2. `build/api-spec/openapi3.yaml` (filesystem) — `./gradlew bootRun` 같은 개발 환경.
- *
- * spec이 둘 다 없으면 404 — 사용자에게 `./gradlew build`로 spec을 먼저 만들도록 알린다.
- *
- * `/swagger-ui.html`(static)이 이 endpoint를 fetch하여 화면에 렌더링한다.
- */
+// classpath(bootJar) → filesystem(bootRun) fallback. sourceSet output 등록 시 circular dep 발생 (ADR-0013).
 @RestController
 class OpenApiSpecController {
     @GetMapping("/api-spec/openapi3.yaml", produces = [MediaType.TEXT_PLAIN_VALUE])

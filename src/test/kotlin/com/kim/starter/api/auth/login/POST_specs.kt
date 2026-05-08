@@ -12,13 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.assertj.MockMvcTester
 
-/**
- * `POST /auth/login` 통합 테스트.
- *
- * - 등록된 회원의 정상 로그인 → 200 + accessToken/refreshToken 반환.
- * - 미등록 이메일 → 401 (이메일 존재 leak 방지를 위해 InvalidCredential 단일화).
- * - 비밀번호 불일치 → 401.
- */
 @IntegrationTest
 @DisplayName("POST /auth/login")
 class `POST_specs`(

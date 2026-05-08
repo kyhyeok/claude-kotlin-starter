@@ -5,13 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.assertj.MockMvcTester
 
-/**
- * Auth 통합 테스트의 공통 흐름(등록 → 로그인 → 토큰 추출).
- *
- * 각 spec이 독립적인 회원·토큰을 생성하도록 하여 테스트 간 격리를 보장한다(CLAUDE.md §5).
- * - 하드코딩 PK·재사용 fixture를 두지 않음.
- * - logout/refresh spec은 [issueTokens]로 즉석 회원 + 토큰 쌍을 받아 사용.
- */
+// 매 테스트가 독립 회원·토큰을 만들도록 한다 (CLAUDE.md §5).
 object AuthTestHelper {
     private val mapper = ObjectMapper()
 

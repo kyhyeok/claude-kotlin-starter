@@ -13,13 +13,6 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.assertj.MockMvcTester
 
-/**
- * `POST /auth/logout` 통합 테스트.
- *
- * - logout만 인증 필요(SecurityConfig). subject = 본인 Access Token의 sub 클레임.
- * - 로그아웃 후 동일 RT로 refresh 시도 → 401 (Redis에서 RT 폐기됨을 검증).
- * - AT 없이 호출 → 401.
- */
 @IntegrationTest
 @DisplayName("POST /auth/logout")
 class `POST_specs`(

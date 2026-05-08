@@ -7,13 +7,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import java.time.OffsetDateTime
 
-/**
- * 인증 API 요청/응답 DTO.
- *
- * - 이메일 형식·길이 검증은 Bean Validation(`@Email @Size(max=255)`)이 담당한다 — 도메인은
- *   String email만 보유하고 검증 책임을 갖지 않는다(ADR-0018).
- * - 응답은 OAuth 2.0 토큰 응답 컨벤션을 따른다(tokenType / expiresIn-seconds).
- */
+// 이메일 형식·길이 검증은 Bean Validation이 담당 (ADR-0018: 도메인은 단순 String).
 data class RegisterRequest(
     @field:NotBlank
     @field:Email
@@ -54,6 +48,7 @@ data class MemberResponse(
     }
 }
 
+// OAuth 2.0 토큰 응답 컨벤션 (tokenType / expiresIn-seconds).
 data class TokenResponse(
     val accessToken: String,
     val refreshToken: String,

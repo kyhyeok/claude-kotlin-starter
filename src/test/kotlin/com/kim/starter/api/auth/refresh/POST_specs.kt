@@ -12,13 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.assertj.MockMvcTester
 
-/**
- * `POST /auth/refresh` 통합 테스트.
- *
- * - 유효한 RT → 200 + 새 토큰 쌍 (rotation).
- * - 잘못된 토큰/AT를 RT 자리에 넣은 경우 → 401.
- * - 이미 rotation된 RT(이전 RT)는 거부 → subject당 1개 활성 정책 검증.
- */
 @IntegrationTest
 @DisplayName("POST /auth/refresh")
 class `POST_specs`(

@@ -5,18 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.ThrowingConsumer
 import java.util.Base64
 
-/**
- * JWT 단언 (commerce-main `JwtAssertions` 정수 추출).
- *
- * decoder 없이도 토큰 문자열의 **형식 자체**(3-segment + base64url-encoded JSON)를 검증한다.
- * subject/claim 같은 디코딩 의존 단언은 컨텍스트마다 decoder가 달라 호출처에서
- * `NimbusJwtDecoder`를 직접 사용한다(NimbusJwtIssuerTest 참고).
- *
- * 사용:
- * ```
- * assertThat(token.value).satisfies(JwtAssertions.conformsToJwtFormat())
- * ```
- */
+// decoder 없이 토큰의 형식만 검증 (3-segment + base64url-encoded JSON). subject/claim 검증은 호출처에서 decoder 사용.
 object JwtAssertions {
     private val mapper = ObjectMapper()
 

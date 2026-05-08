@@ -11,13 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.assertj.MockMvcTester
 
-/**
- * `POST /auth/register` 통합 테스트.
- *
- * - 신규 회원 등록 → 201 Created + MemberResponse.
- * - 동일 이메일 중복 등록 → 409 Conflict ([com.kim.starter.domain.member.DuplicateEmailException] 매핑).
- * - 잘못된 입력(이메일 형식/짧은 비밀번호) → 400 Bad Request (Bean Validation).
- */
 @IntegrationTest
 @DisplayName("POST /auth/register")
 class `POST_specs`(
