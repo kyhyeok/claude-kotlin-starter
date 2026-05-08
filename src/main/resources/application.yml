@@ -36,6 +36,12 @@ spring:
       lifecycle-management: start_only
       file: compose.yaml
 
+app:
+  cors:
+    # fork된 서비스가 실제 도메인으로 교체. 빈 list면 CORS 비활성 (CorsConfig.kt 참고).
+    allowed-origins:
+      - http://localhost:3000
+
 security:
   jwt:
     # ★ 운영은 환경변수 JWT_SECRET (256bit 이상). 평문 commit 금지 (ADR-0004).

@@ -40,7 +40,10 @@ class SecurityConfig {
                 headers.addHeaderWriter { _, response ->
                     response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
                 }
-            }.authorizeHttpRequests {
+            }
+            // CorsConfigurationSource bean을 자동으로 잡음 (CorsConfig.kt).
+            .cors { }
+            .authorizeHttpRequests {
                 it
                     .requestMatchers("/health", "/actuator/health/**")
                     .permitAll()
