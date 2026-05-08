@@ -1,7 +1,6 @@
 package com.kim.starter.application.auth.provided
 
 import com.kim.starter.application.auth.TokenPair
-import com.kim.starter.domain.member.Email
 
 /**
  * 로그인 Use Case 포트(provided). 이메일 + 비밀번호 → Access/Refresh Token.
@@ -13,7 +12,7 @@ interface LoginAuthenticator {
     fun login(command: LoginCommand): TokenPair
 
     data class LoginCommand(
-        val email: Email,
+        val email: String,
         val rawPassword: String,
     )
 }

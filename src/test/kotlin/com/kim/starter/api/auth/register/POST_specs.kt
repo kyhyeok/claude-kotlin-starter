@@ -42,7 +42,7 @@ class `POST_specs`(
             .bodyJson()
             .hasPathSatisfying("$.id") { it.assertThat().asNumber().isNotNull() }
             .hasPathSatisfying("$.email") { it.assertThat().asString().isEqualTo(email) }
-            .hasPathSatisfying("$.status") { it.assertThat().asString().isEqualTo("ACTIVE") }
+            .hasPathSatisfying("$.isActive") { it.assertThat().asBoolean().isTrue() }
     }
 
     @Test

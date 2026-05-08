@@ -2,8 +2,6 @@ package com.kim.starter.adapter.webapi
 
 import com.kim.starter.domain.member.DuplicateEmailException
 import com.kim.starter.domain.member.InvalidCredentialException
-import com.kim.starter.domain.member.MemberNotActiveException
-import com.kim.starter.domain.member.MemberNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -25,14 +23,8 @@ class ApiControllerAdvice(
     @ExceptionHandler(DuplicateEmailException::class)
     fun handleDuplicateEmail(ex: DuplicateEmailException): ProblemDetail = problem(HttpStatus.CONFLICT, ex)
 
-    @ExceptionHandler(MemberNotFoundException::class)
-    fun handleMemberNotFound(ex: MemberNotFoundException): ProblemDetail = problem(HttpStatus.NOT_FOUND, ex)
-
     @ExceptionHandler(InvalidCredentialException::class)
     fun handleInvalidCredential(ex: InvalidCredentialException): ProblemDetail = problem(HttpStatus.UNAUTHORIZED, ex)
-
-    @ExceptionHandler(MemberNotActiveException::class)
-    fun handleMemberNotActive(ex: MemberNotActiveException): ProblemDetail = problem(HttpStatus.FORBIDDEN, ex)
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleIllegalArgument(ex: IllegalArgumentException): ProblemDetail = problem(HttpStatus.BAD_REQUEST, ex)

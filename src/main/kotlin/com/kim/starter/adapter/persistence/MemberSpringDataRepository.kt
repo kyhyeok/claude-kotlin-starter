@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository
  * ArchUnit 룰(`adapter` 레이어는 외부에서 접근 불가)로 의존 방향을 강제한다.
  */
 interface MemberSpringDataRepository : JpaRepository<Member, Long> {
-    fun findByEmailValue(emailValue: String): Member?
+    fun findByEmail(email: String): Member?
 
-    fun existsByEmailValue(emailValue: String): Boolean
+    fun existsByEmail(email: String): Boolean
 }

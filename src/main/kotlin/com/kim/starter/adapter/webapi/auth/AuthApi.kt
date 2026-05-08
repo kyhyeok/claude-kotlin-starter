@@ -2,9 +2,8 @@ package com.kim.starter.adapter.webapi.auth
 
 import com.kim.starter.application.auth.provided.LoginAuthenticator
 import com.kim.starter.application.auth.provided.LogoutHandler
+import com.kim.starter.application.auth.provided.MemberRegister
 import com.kim.starter.application.auth.provided.TokenRefresher
-import com.kim.starter.application.member.provided.MemberRegister
-import com.kim.starter.domain.member.Email
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -23,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController
  * - logout: 유효한 Access Token 필수. SecurityContext의 [Jwt.subject]로 본인 식별 →
  *   클라이언트가 임의의 memberId를 폐기하는 경로를 차단한다.
  *
- * 도메인 예외(Duplicate/InvalidCredential/MemberNotActive) → HTTP 매핑은
+ * 도메인 예외(Duplicate/InvalidCredential) → HTTP 매핑은
  * [com.kim.starter.adapter.webapi.ApiControllerAdvice]에서 단일 책임으로 처리.
  */
 @RestController
@@ -41,7 +40,7 @@ class AuthApi(
         val member =
             memberRegister.register(
                 MemberRegister.RegisterCommand(
-                    email = Email(body.email),
+                    email = body.email,
                     rawPassword = body.password,
                 ),
             )
@@ -55,7 +54,7 @@ class AuthApi(
         val tokens =
             loginAuthenticator.login(
                 LoginAuthenticator.LoginCommand(
-                    email = Email(body.email),
+                    email = body.email,
                     rawPassword = body.password,
                 ),
             )

@@ -1,6 +1,5 @@
 package com.kim.starter.application.required
 
-import com.kim.starter.domain.member.Email
 import com.kim.starter.domain.member.Member
 
 /**
@@ -13,9 +12,9 @@ import com.kim.starter.domain.member.Member
 interface MemberRepository {
     fun save(member: Member): Member
 
-    fun findByEmail(email: Email): Member?
+    fun findByEmail(email: String): Member?
 
     fun findById(id: Long): Member?
 
-    fun existsByEmail(email: Email): Boolean
+    fun existsByEmail(email: String): Boolean
 }

@@ -8,7 +8,6 @@ import com.kim.starter.application.required.MemberRepository
 import com.kim.starter.application.required.RefreshTokenStore
 import com.kim.starter.domain.member.InvalidCredentialException
 import com.kim.starter.domain.member.Member
-import com.kim.starter.domain.member.MemberNotActiveException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtException
@@ -18,13 +17,14 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * 인증 흐름 단일 컨텍스트의 3개 Use Case(login/refresh/logout) 구현.
  *
- * 정책:
+ * 정책 (starter scope — ADR-0018):
  * - JWT subject는 [Member.id]의 String 표현 (안정적 PK, CLAUDE.md §6).
  * - login 실패 사유는 모두 [InvalidCredentialException]로 단일화 → 이메일 존재 leak 방지.
- *   단, 활성 상태가 아닌 회원의 로그인은 [MemberNotActiveException]으로 명시 분리한다 →
- *   클라이언트가 "비활성 회원" 안내를 별도로 표시할 수 있도록.
  * - refresh는 `typ=refresh` 클레임 검증 + Redis 활성 RT 일치 검증 → AT 도용/RT 재사용 차단.
  * - rotation: refresh 성공 시 RT 신규 발급 + Redis 교체.
+ *
+ * starter는 비활성/정지 회원 차단을 시연하지 않는다. fork된 서비스가 그 분기를 추가하려면
+ * `member.isActive` 검사를 [login] 흐름에 박고 도메인 예외(또는 InvalidCredential 통합)로 거부.
  */
 @Service
 @Transactional
@@ -42,9 +42,8 @@ class AuthenticationService(
         if (!passwordEncoder.matches(command.rawPassword, member.passwordHash)) {
             throw InvalidCredentialException()
         }
-        if (!member.isActive) {
-            throw MemberNotActiveException(member.currentStatus)
-        }
+        // starter scope에서는 isActive 차단을 시연하지 않는다 — 비활성 회원 차단이 필요한 fork는
+        // 여기에 `if (!member.isActive) throw ...`를 박는다.
         val subject = checkNotNull(member.id) { "저장된 회원의 id는 null일 수 없습니다" }.toString()
         return issueAndPersist(subject)
     }

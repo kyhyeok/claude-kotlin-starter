@@ -5,11 +5,8 @@ import com.kim.starter.adapter.security.NimbusJwtIssuer
 import com.kim.starter.application.auth.provided.LoginAuthenticator
 import com.kim.starter.application.required.MemberRepository
 import com.kim.starter.application.required.RefreshTokenStore
-import com.kim.starter.domain.member.Email
 import com.kim.starter.domain.member.InvalidCredentialException
 import com.kim.starter.domain.member.Member
-import com.kim.starter.domain.member.MemberNotActiveException
-import com.kim.starter.domain.member.MemberStatus
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
 import io.mockk.every
@@ -65,13 +62,11 @@ class AuthenticationServiceTest {
             refreshTokenStore = refreshTokenStore,
         )
 
-    private val email = Email("user@example.com")
+    private val email = "user@example.com"
     private val activeMember =
         mockk<Member> {
             every { id } returns 42L
             every { passwordHash } returns "hashed"
-            every { isActive } returns true
-            every { currentStatus } returns MemberStatus.ACTIVE
         }
 
     @Test
@@ -107,23 +102,6 @@ class AuthenticationServiceTest {
         assertThatThrownBy {
             service.login(LoginAuthenticator.LoginCommand(email, "wrong"))
         }.isInstanceOf(InvalidCredentialException::class.java)
-    }
-
-    @Test
-    fun `login은 비활성 회원을 MemberNotActiveException으로 거부한다`() {
-        val bannedMember =
-            mockk<Member> {
-                every { id } returns 42L
-                every { passwordHash } returns "hashed"
-                every { isActive } returns false
-                every { currentStatus } returns MemberStatus.BANNED
-            }
-        every { members.findByEmail(email) } returns bannedMember
-        every { passwordEncoder.matches("rawPwd", "hashed") } returns true
-
-        assertThatThrownBy {
-            service.login(LoginAuthenticator.LoginCommand(email, "rawPwd"))
-        }.isInstanceOf(MemberNotActiveException::class.java)
     }
 
     @Test
