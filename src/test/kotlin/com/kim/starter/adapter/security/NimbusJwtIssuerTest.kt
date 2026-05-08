@@ -1,5 +1,6 @@
 package com.kim.starter.adapter.security
 
+import com.kim.starter.support.assertion.JwtAssertions
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
 import org.assertj.core.api.Assertions.assertThat
@@ -90,6 +91,13 @@ class NimbusJwtIssuerTest {
         assertThat(token.subject).isEqualTo("42")
         assertThat(token.issuedAt).isEqualTo(fixedNow)
         assertThat(token.expiresAt).isEqualTo(fixedNow.plus(Duration.ofMinutes(15)))
+    }
+
+    @Test
+    fun `발급 토큰 문자열은 JWT 형식을 따른다`() {
+        val token = issuer.issueAccessToken(subject = "42")
+
+        assertThat(token.value).satisfies(JwtAssertions.conformsToJwtFormat())
     }
 
     @Test
