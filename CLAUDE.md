@@ -127,6 +127,22 @@ ArchUnit은 의존 방향 위반을 _빌드에서_ 잡지만, _의미 위반_(SR
   - `.claude/skills/design-principles/SKILL.md` — 정전 진입점 + §5 신호 빠른 점검
   - `docs/architecture-reference.md` — 이 프로젝트의 baseline 정답 파일 매핑
 
+## 11. 주석은 WHY만, 짧게
+
+**default = 주석 0. 식별자가 책임을 말한다.**
+
+- 잘 명명된 함수/변수/타입은 추가 설명이 필요 없다. WHAT을 설명하는 주석은 코드와 중복이라 금지.
+- 클래스/함수마다 KDoc 풀세트(`/** ... */`)를 박지 않는다. 정말 비자명한 정책만 한 줄.
+- 주석을 쓸 때 기준:
+  - 숨은 제약, 미묘한 invariant, 특정 버그 회피, 표준이 아닌 동작
+  - 외부 결정 참조 한 줄: `// ADR-NNNN에 따라 ...` OK
+- 금지:
+  - WHAT 중복 (`// 회원을 등록한다`)
+  - task-local 정보 ("added for X 흐름", "issue #123") → commit/PR 메시지로
+  - 호출자/사용처 박기 → 코드 진화하면 stale
+
+자문: "이 주석을 지우면 미래의 독자가 혼란할까?" → 아니면 지운다.
+
 ---
 
 **이 가이드가 작동하면:** ArchUnit 위반 없는 PR, `var` 외부 노출 없는 도메인, 하드코딩 PK 없는 테스트, 평문 시크릿 없는 yml, 비자명한 결정은 자동으로 ADR에 박제되고, **새 도메인 슬라이스는 commit 전 architecture-reviewer로 자기-검증된다**.
