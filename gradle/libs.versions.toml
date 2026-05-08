@@ -8,7 +8,7 @@ spring-dependency-management = "1.1.7"
 jooq = "3.19.32"
 flyway = "11.10.0"
 
-nimbus-jose-jwt = "10.0.2"
+nimbus-jose-jwt = "10.9"
 
 logstash-logback-encoder = "8.0"
 
