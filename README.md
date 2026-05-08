@@ -77,13 +77,15 @@ src/main/kotlin/com/kim/starter/
 ## 주요 명령
 
 ```bash
-./gradlew build            # 컴파일 + 테스트 + 정적분석
-./gradlew test             # 테스트만
-./gradlew ktlintFormat     # 포매팅 자동 적용
-./gradlew detekt           # 정적분석
-./gradlew openapi3         # REST Docs로 OpenAPI 스펙 생성 (test 통과 후)
-./gradlew bootRun          # 로컬 서버 (docker-compose 자동 기동)
+./gradlew build               # 컴파일 + 테스트 + ktlint + ArchUnit
+./gradlew test                # 테스트만
+./gradlew ktlintFormat        # 포매팅 자동 적용
+./gradlew koverXmlReport      # 커버리지 XML(Kover, ADR-0015) — build/reports/kover/report.xml
+./gradlew openapi3            # REST Docs로 OpenAPI 스펙 생성 (test 통과 후)
+./gradlew bootRun             # 로컬 서버 (docker-compose 자동 기동)
 ```
+
+> detekt은 ADR-0007에 따라 임시 제거(Kotlin 2.3 호환 GA 미출시). GA 재도입 시 활성화.
 
 ## 다음 작업 (Day 2 이후)
 
@@ -93,9 +95,9 @@ src/main/kotlin/com/kim/starter/
 - [x] 통합 테스트 (Testcontainers + MockMvcTester)
 - [x] Swagger UI 호스팅 통합 (REST Docs → OpenAPI 3 → `/swagger-ui.html`)
 - [x] `rename-package.sh` 스크립트 (새 프로젝트 시작 자동화 — ADR-0014)
-- [ ] CI 강화 (GitHub Actions + Codecov + Dependabot)
-- [ ] Micrometer + Prometheus 검증
-- [ ] detekt 2.0 GA 모니터링 (ADR-0007 재실행)
+- [x] CI 강화 (GitHub Actions + Kover + Codecov + Dependabot — ADR-0015)
+- [x] Micrometer + Prometheus + 도메인 메트릭 포트 분리 (ADR-0016)
+- [ ] detekt 2.0 GA 모니터링 (ADR-0007 재실행, GA 출시까지 보류)
 
 ## 문서
 
