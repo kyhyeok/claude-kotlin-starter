@@ -126,11 +126,68 @@
 - Dependabot 개별 PR이 Spring Boot BOM PR보다 먼저 머지 시 빌드 깨짐 → group 패턴으로 묶음.
 - Codecov 자체 장애 → `fail_ci_if_error: false`로 CI 게이트 분리.
 
-### Day 3-3. Micrometer + Prometheus 검증 (대기)
+### Day 3-3. Micrometer + Prometheus 검증 (다음 세션 우선순위) ⏳
 
-- [ ] `application.yml`의 `management.endpoints.web.exposure.include`에 `prometheus` 이미 포함됨 → 의존성만 추가.
-- [ ] `io.micrometer:micrometer-registry-prometheus` 추가 + `/actuator/prometheus` 응답 검증 통합 테스트.
-- [ ] 도메인 메트릭 샘플(예: `MemberRegistrationService`의 회원 등록 카운터) — 새 프로젝트가 따라할 패턴.
+**현재 상태**:
+- ✅ `application.yml`의 `management.endpoints.web.exposure.include`에 `prometheus` 이미 노출.
+- ❌ `io.micrometer:micrometer-registry-prometheus` 의존성 미추가 → 현재 `/actuator/prometheus` 호출 시 404.
+- ❌ `SecurityConfig`가 `/actuator/health/**`만 permitAll → `/actuator/prometheus`는 401(인증 필요).
+- ❌ 도메인 메트릭 sample 없음 (Spring/Hibernate/Hikari 기본만).
+
+**4단계 분할 계획** (사용자 선호 패턴 — Day 2-4 / 3-1 / 3-2 동일):
+
+#### 3-3-1. micrometer-registry-prometheus 의존성 추가
+
+- `libs.versions.toml`에 `micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }` (BOM 관리, 버전 미명시).
+- `build.gradle.kts`의 `dependencies`에 `implementation(libs.micrometer.registry.prometheus)`.
+- `./gradlew clean build` 통과 검증(회귀 0).
+
+#### 3-3-2. SecurityConfig에 prometheus permitAll + 통합 테스트
+
+**결정 필요**:
+- 옵션 A: `/actuator/prometheus` permitAll. 운영은 reverse proxy/IP 화이트리스트로 보호. (Prometheus scraper는 토큰 보유 X — 표준 패턴)
+- 옵션 B: 기본은 인증 필요. 운영에서 별도 ServiceAccount 토큰으로 scrape.
+- 권장: **옵션 A** (sample/dev 친화 + 표준 운영 패턴). ADR-0016에 결정 근거 박제.
+
+작업:
+- `SecurityConfig`의 `/actuator/health/**` 라인 옆에 `/actuator/prometheus` 추가.
+- `src/test/.../api/actuator/GET_specs.kt`(또는 `prometheus/`) 통합 테스트 — 200 응답 + Content-Type 검증(`text/plain` 또는 `application/openmetrics-text`).
+- `./gradlew clean build` 통과.
+
+#### 3-3-3. 도메인 카운터 sample — MemberRegistrationService
+
+**결정 필요**:
+- 옵션 A: `MeterRegistry`를 직접 의존(application 슬라이스). Spring 의존성 추가지만 단순. PasswordEncoder 직접 의존 패턴(ADR-0012)과 정합.
+- 옵션 B: `MetricRecorder` 포트 분리 + `MicrometerMetricRecorder` 어댑터. 헥사고날 정합성 ↑, 단위 테스트 격리 ↑.
+- 권장: **옵션 B** (CLAUDE.md §1 단방향 의존 + §4 외부는 모두 포트 뒤). PasswordEncoder는 Spring Security 표준이라 예외였지만 Micrometer는 어댑터화 비용 적음.
+
+작업:
+- `application/required/MetricRecorder.kt` (`countRegistration(result: RegistrationResult)` 등).
+- `adapter/observability/MicrometerMetricRecorder.kt` — `MeterRegistry.counter("member.registration", "result", result.value)`.
+- `MemberRegistrationService`에 카운터 호출 추가(성공: `result=success`, 중복: `result=duplicate`).
+- 단위 테스트 갱신 + 통합 테스트로 `/actuator/prometheus`에 `member_registration_total` 노출 검증.
+
+#### 3-3-4. ADR-0016 박제 + NEXT_STEPS.md 갱신
+
+- `adr/0016-micrometer-prometheus-domain-metrics.md` — 위 결정 + 함정 박제.
+- `NEXT_STEPS.md`의 Day 3-3 ✅ 처리 + Day 3-4 우선순위 갱신.
+
+**예상 함정** (다음 세션이 만날 가능성):
+- Spring Boot 4 actuator 모듈 분리 — `spring-boot-starter-actuator`가 web 부분을 별도 모듈로 분리했을 가능성. 현재 `libs.spring.boot.starter.actuator` 의존만 있으므로 endpoint web exposure가 안 될 수 있음. → 빌드/부팅 후 `/actuator/prometheus` 200 확인 필수.
+- Prometheus exposition format — Spring Boot 4의 actuator는 `Accept` 헤더에 따라 `application/openmetrics-text; version=1.0.0` 또는 `text/plain; version=0.0.4` 응답. 통합 테스트는 둘 다 수용하도록 작성.
+- Counter 인스턴스 캐싱 — `MeterRegistry.counter(name, tags...)`는 같은 (name+tags) 호출에 같은 인스턴스 반환. 어댑터에서 인스턴스 lookup 비용은 무시 가능하지만, 호출마다 새 Counter를 만들지 않도록 주의.
+- `SimpleMeterRegistry`(테스트 기본)의 cumulative 동작 — 테스트가 여러 케이스를 같은 ApplicationContext에서 돌리면 카운터가 누적. 통합 테스트 격리는 `@DirtiesContext` 또는 카운터 delta 검증으로 해결.
+- `/actuator/prometheus` 응답에 JVM/Hibernate/Hikari/HTTP 메트릭이 자동 노출 → 응답 본문이 큼(수십 KB). 단순 substring 검증("member_registration_total" 포함)으로 충분.
+
+**검증 명령**:
+```bash
+./gradlew clean build koverXmlReport               # 회귀 + coverage
+./gradlew bootRun                                  # 사용자 직접 실행 — ADR-0009
+curl -s http://localhost:8080/actuator/prometheus | grep member_registration  # 카운터 노출 확인
+```
+
+**ADR 후보**:
+- ADR-0016: Micrometer + Prometheus 도입 + MetricRecorder 포트 분리 + actuator 보안 정책.
 
 ### Day 3-4. detekt 2.0 GA 모니터링 (외부 의존)
 
