@@ -12,6 +12,7 @@
 - ✅ **Day 3-1 완료**: `scripts/rename-package.sh` — `<old> <new>` 명시 + dry-run + git cleanliness + BSD/GNU sed 분기 + bash 3.2 호환(`tr` 사용). *.kt/*.java/build.gradle.kts(group+jOOQ target+path 주석)/settings.gradle.kts/application*.yml 일괄 치환 + git mv 디렉토리 이동. end-to-end: 임시 cp → 스크립트 → `./gradlew clean build` 33초 통과(44개 테스트). ADR-0014 박제. README 5분 가이드 갱신.
 - ✅ **Day 3-2 완료**: CI 강화 — `concurrency.cancel-in-progress` + `permissions: contents: read` + `validate-wrappers: true` + 실패 시 test report artifact + Kover 0.9.8 도입(jOOQ 생성 코드 + Application 진입점 제외) + Codecov upload(`codecov-action@v5`, `fail_ci_if_error: false`) + Dependabot(gradle/github-actions weekly, Spring Boot/Kotlin/Testing 그룹 묶음). `./gradlew clean build koverXmlReport` 1분 19초 통과 — 44개 테스트 + `build/reports/kover/report.xml` 생성. ADR-0015 박제.
 - ✅ **Day 3-3 완료**: Micrometer + Prometheus + 도메인 메트릭. `micrometer-registry-prometheus` 의존성 추가(BOM 정렬). `/actuator/prometheus` permitAll(SecurityConfig) — 운영은 reverse proxy/IP 화이트리스트로 보호. `MetricRecorder` 포트(`application/required/`) + `MicrometerMetricRecorder` 어댑터(`adapter/observability/`)로 헥사고날 정합. `MemberRegistrationService`에 success/duplicate 카운터 호출 박음. 통합 테스트 3개 추가(`api/actuator/prometheus/GET_specs.kt` — 200 응답 + exposition 포맷 + `member_registration_total` 노출 검증). `./gradlew clean build` 33초 통과. ADR-0016 박제.
+- ✅ **Day 4-1 완료**: 테스트 인프라 강화 — commerce-main 정수 추출. `support/fixture/MemberFixture.kt`(도메인 객체 생성, default unique email + 결정론 시점) + `support/assertion/{MemberAssertions,JwtAssertions}.kt`(`ThrowingConsumer<T>` + AssertJ `satisfies(...)`로 도메인 단언 한 줄에 박음). MemberTest 갱신 + NimbusJwtIssuerTest에 JWT 형식 단언 케이스 추가. 죽은 코드 `support/ApplicationApiTest.kt` 제거(미사용, HealthApiTest 주석에서만 참조). ADR-0017 박제. 48개 테스트 통과.
 
 ## Day 2 — 4단계 분할 계획
 
@@ -144,7 +145,17 @@
 - Micrometer가 카운터 이름을 `member.registration` → `member_registration_total`로 변환(dot→underscore + `_total`).
 - `SimpleMeterRegistry` cumulative — 같은 `@SpringBootTest` 컨텍스트의 다른 테스트가 register를 호출하면 카운터 누적. 정확 값 검증 시 `@DirtiesContext`/delta 필요. starter는 substring 매칭으로 충분.
 
-### Day 3-4. detekt 2.0 GA 모니터링 (외부 의존)
+### Day 4-1. 테스트 인프라 강화 (commerce-main 정수 추출) ✅
+
+`support/fixture/MemberFixture.kt` + `support/assertion/{MemberAssertions,JwtAssertions}.kt` 도입. AssertJ `satisfies(...)`와 `ThrowingConsumer<T>`로 도메인 단언을 한 줄에 박음. ADR-0017 박제.
+
+**박힌 결정 요약**:
+- fixture: `<Ctx>Fixture.kt` 패턴. default는 unique 이메일 + 결정론 시점. 상태는 도메인 행위 메서드로만(reflection 거부 — 캡슐화 §2).
+- assertion: Kotlin object + `ThrowingConsumer<T>` 채택. `AbstractAssert` 상속 거부(Kotlin·Java generic 상속 비대대성).
+- 죽은 코드 `ApplicationApiTest` 제거 — 미사용 메타 어노테이션은 fork된 사용자에게 잘못된 패턴 신호.
+- 새 도메인 추가 시 default checklist: `<Ctx>Fixture.kt` + `<Ctx>Assertions.kt` + 필요 시 `<Ctx>TestHelper.kt`.
+
+### Day 3-4 / 후속. detekt 2.0 GA 모니터링 (외부 의존, 사용자 트리거 시에만)
 
 - [ ] detekt 2.0 GA 출시 시 ADR-0007 체크리스트 재실행 → 재도입.
 - 모니터링: https://github.com/detekt/detekt/releases — Kotlin 2.3 호환 GA 출시 시점.

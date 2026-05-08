@@ -97,6 +97,7 @@ src/main/kotlin/com/kim/starter/
 - [x] `rename-package.sh` 스크립트 (새 프로젝트 시작 자동화 — ADR-0014)
 - [x] CI 강화 (GitHub Actions + Kover + Codecov + Dependabot — ADR-0015)
 - [x] Micrometer + Prometheus + 도메인 메트릭 포트 분리 (ADR-0016)
+- [x] 테스트 인프라 강화 — fixture + assertion 패턴 (ADR-0017)
 - [ ] detekt 2.0 GA 모니터링 (ADR-0007 재실행, GA 출시까지 보류)
 
 ## 문서
