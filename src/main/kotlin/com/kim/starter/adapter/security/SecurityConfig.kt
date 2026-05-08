@@ -40,6 +40,9 @@ class SecurityConfig {
                 it
                     .requestMatchers("/health", "/actuator/health/**")
                     .permitAll()
+                    // Prometheus scrape 엔드포인트 — 운영은 reverse proxy/IP 화이트리스트로 보호한다 (ADR-0016).
+                    .requestMatchers("/actuator/prometheus")
+                    .permitAll()
                     // Swagger UI + OpenAPI spec — REST Docs로 만든 spec을 노출. webjars 자원도 함께.
                     .requestMatchers("/swagger-ui.html", "/api-spec/**", "/webjars/**")
                     .permitAll()
