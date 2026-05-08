@@ -42,6 +42,8 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.actuator)
+    // Prometheus 노출 — /actuator/prometheus 엔드포인트. Spring Boot BOM이 버전 관리 (ADR-0016).
+    implementation(libs.micrometer.registry.prometheus)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.kotlin.reflect)
 

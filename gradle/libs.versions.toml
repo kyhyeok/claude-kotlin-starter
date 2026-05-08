@@ -56,6 +56,9 @@ spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+# Micrometer Prometheus 레지스트리 — /actuator/prometheus 엔드포인트 활성화 (ADR-0016).
+# 버전은 Spring Boot BOM이 관리 → libs.versions.toml에 명시하지 않는다 (ADR-0011 패턴 재사용).
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 # Spring Boot 4.0부터 테스트 자동구성 모듈이 분리됨 (org.springframework.boot.<tech>.test.autoconfigure 패키지로 이동).
 # - spring-boot-testcontainers: @ServiceConnection (org.springframework.boot.testcontainers.service.connection)
