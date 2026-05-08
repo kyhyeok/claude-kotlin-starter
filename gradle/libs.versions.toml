@@ -25,7 +25,7 @@ restdocs-api-spec = "0.20.1"
 
 # detekt: ADR-0007에 따라 GA 미출시로 제외. GA 시 활성화.
 # detekt = "2.0.0"
-ktlint-gradle = "12.1.1"
+ktlint-gradle = "14.2.0"
 
 # Kover (ADR-0015): Kotlin inline 정확도. JaCoCo 호환 XML로 Codecov에 그대로 업로드.
 kover = "0.9.8"
