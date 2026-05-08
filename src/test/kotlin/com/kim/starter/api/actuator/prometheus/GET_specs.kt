@@ -1,7 +1,5 @@
 package com.kim.starter.api.actuator.prometheus
 
-import com.kim.starter.application.member.provided.MemberRegister
-import com.kim.starter.domain.member.Email
 import com.kim.starter.support.IntegrationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
@@ -18,12 +16,14 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester
  *   substring 매칭으로 충분하다.
  * - Content-Type은 Accept 헤더에 따라 `text/plain; version=0.0.4` 또는
  *   `application/openmetrics-text; version=1.0.0`. 둘 다 수용한다.
+ *
+ * 도메인 메트릭(`member.registration` 등)은 starter scope 외 — fork된 서비스가 카운터를 추가하면
+ * 같은 substring 패턴으로 노출 검증을 작성한다(ADR-0018).
  */
 @IntegrationTest
 @DisplayName("GET /actuator/prometheus")
 class `GET_specs`(
     @Autowired private val mvc: MockMvcTester,
-    @Autowired private val memberRegister: MemberRegister,
 ) {
     @Test
     fun `200을 반환한다`() {
@@ -42,26 +42,5 @@ class `GET_specs`(
             .contains("# HELP")
             .contains("# TYPE")
             .contains("jvm_memory_used_bytes")
-    }
-
-    @Test
-    fun `member_registration 도메인 카운터를 노출한다`() {
-        // 매 테스트가 독립 데이터를 만들도록 unique email 사용 (CLAUDE.md §5).
-        memberRegister.register(
-            MemberRegister.RegisterCommand(
-                email = Email("metrics-${System.nanoTime()}@example.com"),
-                rawPassword = "P@ssw0rd!",
-            ),
-        )
-
-        val result = mvc.get().uri("/actuator/prometheus").exchange()
-
-        // Micrometer Prometheus는 카운터에 `_total` 접미사를 붙이고 dot을 underscore로 치환한다
-        // → `member.registration` → `member_registration_total`.
-        assertThat(result)
-            .hasStatusOk()
-            .bodyText()
-            .contains("member_registration_total")
-            .contains("""result="success"""")
     }
 }
