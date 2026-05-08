@@ -14,8 +14,8 @@ import java.time.ZoneOffset
  * - Spring 컨텍스트를 띄우지 않는다 → docker/PostgreSQL/Redis 불필요, 빠름.
  * - Clock DI 패턴 시연: 시간 의존을 인자로 받아 결정론적 검증.
  *
- * 통합 테스트 패턴은 첫 도메인 추가 시 `support/ApplicationApiTest`를 사용해 작성한다.
- * 통합 테스트는 docker desktop이 켜져 있어야 한다 (compose.yaml 자동 기동).
+ * 통합 테스트 패턴은 [com.kim.starter.support.IntegrationTest] 메타 어노테이션을 사용한다
+ * (MockMvcTester + Testcontainers + REST Docs). 예: `api/health/GET_specs.kt`.
  */
 @DisplayName("HealthApi")
 class HealthApiTest {
