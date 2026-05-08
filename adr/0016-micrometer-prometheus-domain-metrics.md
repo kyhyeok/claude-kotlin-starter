@@ -1,8 +1,8 @@
 # 0016. Micrometer + Prometheus + 도메인 메트릭 포트 분리
 
 - 일자: 2026-05-08
-- 상태: Accepted
-- 관련: ADR-0001 (헥사고날 — 외부는 모두 포트 뒤), ADR-0011 (BOM 정렬), ADR-0012 (Auth 슬라이스 — PasswordEncoder 직접 의존 예외)
+- 상태: Accepted (ADR-0018에 의해 일부 supersede — 도메인 메트릭 sample 제거, Prometheus 자동 메트릭 유지)
+- 관련: ADR-0001 (헥사고날 — 외부는 모두 포트 뒤), ADR-0011 (BOM 정렬), ADR-0012 (Auth 슬라이스 — PasswordEncoder 직접 의존 예외), ADR-0018 (starter scope thin)
 
 ## 배경
 

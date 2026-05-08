@@ -99,6 +99,7 @@ src/main/kotlin/com/kim/starter/
 - [x] Micrometer + Prometheus 자동 메트릭 노출 (ADR-0016/0018 — 도메인 카운터 sample은 fork 시 도입)
 - [x] 테스트 인프라 강화 — fixture + assertion 패턴 (ADR-0017)
 - [x] starter scope 명시 + thin user 모델 (ADR-0018: 박는 것/박지 않는 것 표 박제)
+- [x] 보안 헤더·CORS·Rate limiting (ADR-0019: CSP/HSTS/CORS 정책 + Redis 고정 윈도우)
 - [ ] detekt 2.0 GA 모니터링 (ADR-0007 재실행, GA 출시까지 보류)
 
 ## 문서

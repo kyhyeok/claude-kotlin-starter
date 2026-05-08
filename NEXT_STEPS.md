@@ -14,6 +14,25 @@
 - ✅ **Day 3-3 완료**: Micrometer + Prometheus + 도메인 메트릭. `micrometer-registry-prometheus` 의존성 추가(BOM 정렬). `/actuator/prometheus` permitAll(SecurityConfig) — 운영은 reverse proxy/IP 화이트리스트로 보호. `MetricRecorder` 포트(`application/required/`) + `MicrometerMetricRecorder` 어댑터(`adapter/observability/`)로 헥사고날 정합. `MemberRegistrationService`에 success/duplicate 카운터 호출 박음. 통합 테스트 3개 추가(`api/actuator/prometheus/GET_specs.kt` — 200 응답 + exposition 포맷 + `member_registration_total` 노출 검증). `./gradlew clean build` 33초 통과. ADR-0016 박제.
 - ✅ **Day 4-1 완료**: 테스트 인프라 강화 — commerce-main 정수 추출. `support/fixture/MemberFixture.kt`(도메인 객체 생성, default unique email + 결정론 시점) + `support/assertion/{MemberAssertions,JwtAssertions}.kt`(`ThrowingConsumer<T>` + AssertJ `satisfies(...)`로 도메인 단언 한 줄에 박음). MemberTest 갱신 + NimbusJwtIssuerTest에 JWT 형식 단언 케이스 추가. 죽은 코드 `support/ApplicationApiTest.kt` 제거(미사용, HealthApiTest 주석에서만 참조). ADR-0017 박제. 48개 테스트 통과.
 - ✅ **Day 4-2 완료**: starter scope 명시 + thin user 모델. 사용자 검토(2026-05-08)에서 Member 도메인이 starter 의도("가벼움 + 도메인 무관")를 넘어 깊게 박힌 것을 확인 → 4단계 정리. (1) `Email` VO + `MemberStatus` enum + 행위 메서드 + 도메인 예외 일부 제거(thin model: id/email/passwordHash/isActive/시점). (2) `application/member` 슬라이스 → Auth 편입. (3) 도메인 메트릭 sample 제거(`MetricRecorder` 포트 + `MicrometerMetricRecorder` 어댑터 + observability 디렉토리). (4) V1__init.sql 단순화(`status VARCHAR` → `is_active BOOLEAN`) + ADR-0018 박제(ADR-0012/0016 부분 supersede + starter scope 표 명시). 38 tests / 0 failures.
+- ✅ **Day 4-3 완료 (2026-05-08)**: 보안 헤더·CORS·Rate limiting 박제. (1) SecurityConfig에 5종 응답 헤더(CSP/HSTS/X-Frame-Options/Referrer-Policy/Permissions-Policy). (2) `CorsProperties` + `CorsConfig` — `app.cors.allowed-origins` 환경변수 바인딩, 빈 list면 CORS 비활성. (3) Redis 고정 윈도우 Rate limiting — `RateLimitInterceptor` + `RateLimitProperties`, IP 단위, `/auth/login` 10회 + `/auth/register` 5회 per minute. 테스트: 보안 헤더 5종(`GET_specs`) + CORS preflight 2건(`OPTIONS_specs`) + `RateLimitInterceptorTest` 단위 4건. 총 45 tests. ADR-0019 박제. ADR-0012/0016 역참조 갱신.
+
+## ▶ 다음 세션이 즉시 시작할 작업 후보
+
+**현 상태**: Day 1~4-3 완료. 45 tests. ADR 0001~0019. commit `c3ab884` 기준.
+
+다음 후보 중 하나를 선택 후 진입:
+- **Day 4-4: 운영 준비** — `server.shutdown: graceful`(이미 박힘) + readiness/liveness probe 분리(`/actuator/health/readiness`, `/actuator/health/liveness`) + Jib 또는 다단계 Dockerfile 이미지 표준화.
+- **Day 4-4: 프로파일 분리** — `application-local/staging/prod.yml` 뼈대 + 환경변수 문서화 + `.env.example`.
+- **실제 QR 서비스 fork** — starter kit이 충분히 안정. `rename-package.sh`로 새 레포 초기화 후 QR 도메인 개발 착수.
+- **Day 3-4: detekt GA** — GA 출시 여부 재확인 → ADR-0007 체크리스트.
+
+진입 즉시 실행:
+```bash
+cd "/Users/kimyoonhyeok/QR 베이스가 될 프로젝트/spring-kotlin-starter"
+./gradlew clean build          # 회귀 검증 (45 tests 통과 baseline)
+git log --oneline | head -5    # 최신 commit c3ab884(rate limit) 확인
+docker info                    # Testcontainers 가용성
+```
 
 ## Day 2 — 4단계 분할 계획
 
@@ -167,6 +186,18 @@
 - 도메인 메트릭 sample 제거 — `MetricRecorder` 포트 + `MicrometerMetricRecorder` 어댑터 + observability 디렉토리. Prometheus endpoint와 자동 메트릭은 유지(도메인 무관 인프라).
 - V1__init.sql `status VARCHAR(20)` → `is_active BOOLEAN`. ADR-0009의 "이미 적용된 V 수정 금지"는 운영 보호 목적이라 starter는 운영 이전 단계 단순 수정 허용.
 - 새 작업 도입 전 판단 룰: "도메인 무관 인프라인가, 아니면 sample 도메인에 한정되는가? 포트 시그니처에 도메인 단어가 박히지 않는가?"
+
+### Day 4-3. 보안 헤더·CORS·Rate limiting ✅
+
+SecurityConfig 5종 헤더 + CorsProperties/CorsConfig + Redis 고정 윈도우 Rate limiting. ADR-0019 박제.
+
+**박힌 결정 요약**:
+- CSP: `default-src 'self'; style-src/script-src 'unsafe-inline'` — Swagger UI 인라인 호환.
+- HSTS: `max-age=31536000; includeSubDomains` — 운영은 reverse proxy TLS terminate.
+- Permissions-Policy: `camera=(), microphone=(), geolocation=()` — `HeaderWriter` 람다(DSL deprecated).
+- CORS: `allowedOrigins` 환경변수 바인딩. 빈 list면 비활성. sample: `localhost:3000`.
+- Rate limiting: Redis INCR/EXPIRE 고정 윈도우. Bucket4j 거부(추가 의존 불필요 — Redis 재사용). 통합 테스트에서는 비활성(`rules: []`), 단위 테스트로 로직 검증.
+- ADR-0012/0016에 ADR-0018 역참조 추가(양방향 트레이서빌리티 보완).
 
 ### Day 3-4 / 후속. detekt 2.0 GA 모니터링 (외부 의존, 사용자 트리거 시에만)
 

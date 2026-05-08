@@ -1,8 +1,8 @@
 # ADR-0012: Auth 슬라이스 도입 — Member 도메인 + 단일 행위 포트 + RT rotation
 
-- 상태: Accepted
+- 상태: Accepted (ADR-0018에 의해 일부 supersede — Auth 슬라이스 구조 유지, Member 도메인 thin 축소)
 - 일시: 2026-05-07
-- 관련: ADR-0001(헥사고날), ADR-0003(JWT OAuth2), ADR-0004(시크릿)
+- 관련: ADR-0001(헥사고날), ADR-0003(JWT OAuth2), ADR-0004(시크릿), ADR-0018(starter scope thin)
 
 ## 맥락
 
