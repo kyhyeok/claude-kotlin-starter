@@ -31,4 +31,15 @@ class `GET_specs`(
             .hasPathSatisfying("$.status") { it.assertThat().asString().isEqualTo("UP") }
             .hasPathSatisfying("$.timestamp") { it.assertThat().asString().isNotBlank() }
     }
+
+    @Test
+    fun `보안 헤더를 포함한다`() {
+        val result = mvc.get().uri("/health").exchange()
+
+        assertThat(result.response.getHeader("Content-Security-Policy")).isNotBlank()
+        assertThat(result.response.getHeader("X-Content-Type-Options")).isEqualTo("nosniff")
+        assertThat(result.response.getHeader("X-Frame-Options")).isEqualTo("DENY")
+        assertThat(result.response.getHeader("Referrer-Policy")).isEqualTo("strict-origin-when-cross-origin")
+        assertThat(result.response.getHeader("Permissions-Policy")).isNotBlank()
+    }
 }

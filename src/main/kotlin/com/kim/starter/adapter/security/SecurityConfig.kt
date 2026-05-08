@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 import javax.crypto.spec.SecretKeySpec
 
 @Configuration
@@ -25,7 +26,21 @@ class SecurityConfig {
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .authorizeHttpRequests {
+            .headers { headers ->
+                // Swagger UI는 인라인 스크립트·스타일을 사용하므로 'unsafe-inline' 허용.
+                headers.contentSecurityPolicy {
+                    it.policyDirectives(
+                        "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:",
+                    )
+                }
+                headers.httpStrictTransportSecurity { it.includeSubDomains(true).maxAgeInSeconds(31536000L) }
+                headers.frameOptions { it.deny() }
+                headers.referrerPolicy { it.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN) }
+                // permissionsPolicy DSL이 Spring Security 7에서 deprecated → HeaderWriter 람다로 직접 박음.
+                headers.addHeaderWriter { _, response ->
+                    response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+                }
+            }.authorizeHttpRequests {
                 it
                     .requestMatchers("/health", "/actuator/health/**")
                     .permitAll()
