@@ -41,6 +41,13 @@ app:
     # fork된 서비스가 실제 도메인으로 교체. 빈 list면 CORS 비활성 (CorsConfig.kt 참고).
     allowed-origins:
       - http://localhost:3000
+  ratelimit:
+    # IP 단위 분당 고정 윈도우 (RateLimitInterceptor). 빈 list면 비활성.
+    rules:
+      - path: /auth/login
+        limit: 10
+      - path: /auth/register
+        limit: 5
 
 security:
   jwt:

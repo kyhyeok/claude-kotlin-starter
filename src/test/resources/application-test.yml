@@ -2,6 +2,9 @@ app:
   cors:
     allowed-origins:
       - http://localhost:3000
+  ratelimit:
+    # 통합 테스트에서는 비활성 — IP 공유로 한도 도달 시 다른 테스트가 429를 받음.
+    rules: []
 
 spring:
   # 통합 테스트는 Testcontainers가 PostgreSQL/Redis를 띄우고 @ServiceConnection이 URL을 주입한다.
