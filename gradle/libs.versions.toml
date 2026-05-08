@@ -6,7 +6,7 @@ spring-dependency-management = "1.1.7"
 
 # jOOQ는 Spring Boot BOM에 정렬 (ADR-0011). 상향 조정 시 BOM 채택 버전 먼저 확인.
 jooq = "3.19.32"
-flyway = "11.10.0"
+flyway = "12.5.0"
 
 nimbus-jose-jwt = "10.0.2"
 
