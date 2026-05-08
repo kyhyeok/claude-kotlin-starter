@@ -96,8 +96,9 @@ src/main/kotlin/com/kim/starter/
 - [x] Swagger UI 호스팅 통합 (REST Docs → OpenAPI 3 → `/swagger-ui.html`)
 - [x] `rename-package.sh` 스크립트 (새 프로젝트 시작 자동화 — ADR-0014)
 - [x] CI 강화 (GitHub Actions + Kover + Codecov + Dependabot — ADR-0015)
-- [x] Micrometer + Prometheus + 도메인 메트릭 포트 분리 (ADR-0016)
+- [x] Micrometer + Prometheus 자동 메트릭 노출 (ADR-0016/0018 — 도메인 카운터 sample은 fork 시 도입)
 - [x] 테스트 인프라 강화 — fixture + assertion 패턴 (ADR-0017)
+- [x] starter scope 명시 + thin user 모델 (ADR-0018: 박는 것/박지 않는 것 표 박제)
 - [ ] detekt 2.0 GA 모니터링 (ADR-0007 재실행, GA 출시까지 보류)
 
 ## 문서

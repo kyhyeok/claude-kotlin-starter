@@ -13,6 +13,7 @@
 - ✅ **Day 3-2 완료**: CI 강화 — `concurrency.cancel-in-progress` + `permissions: contents: read` + `validate-wrappers: true` + 실패 시 test report artifact + Kover 0.9.8 도입(jOOQ 생성 코드 + Application 진입점 제외) + Codecov upload(`codecov-action@v5`, `fail_ci_if_error: false`) + Dependabot(gradle/github-actions weekly, Spring Boot/Kotlin/Testing 그룹 묶음). `./gradlew clean build koverXmlReport` 1분 19초 통과 — 44개 테스트 + `build/reports/kover/report.xml` 생성. ADR-0015 박제.
 - ✅ **Day 3-3 완료**: Micrometer + Prometheus + 도메인 메트릭. `micrometer-registry-prometheus` 의존성 추가(BOM 정렬). `/actuator/prometheus` permitAll(SecurityConfig) — 운영은 reverse proxy/IP 화이트리스트로 보호. `MetricRecorder` 포트(`application/required/`) + `MicrometerMetricRecorder` 어댑터(`adapter/observability/`)로 헥사고날 정합. `MemberRegistrationService`에 success/duplicate 카운터 호출 박음. 통합 테스트 3개 추가(`api/actuator/prometheus/GET_specs.kt` — 200 응답 + exposition 포맷 + `member_registration_total` 노출 검증). `./gradlew clean build` 33초 통과. ADR-0016 박제.
 - ✅ **Day 4-1 완료**: 테스트 인프라 강화 — commerce-main 정수 추출. `support/fixture/MemberFixture.kt`(도메인 객체 생성, default unique email + 결정론 시점) + `support/assertion/{MemberAssertions,JwtAssertions}.kt`(`ThrowingConsumer<T>` + AssertJ `satisfies(...)`로 도메인 단언 한 줄에 박음). MemberTest 갱신 + NimbusJwtIssuerTest에 JWT 형식 단언 케이스 추가. 죽은 코드 `support/ApplicationApiTest.kt` 제거(미사용, HealthApiTest 주석에서만 참조). ADR-0017 박제. 48개 테스트 통과.
+- ✅ **Day 4-2 완료**: starter scope 명시 + thin user 모델. 사용자 검토(2026-05-08)에서 Member 도메인이 starter 의도("가벼움 + 도메인 무관")를 넘어 깊게 박힌 것을 확인 → 4단계 정리. (1) `Email` VO + `MemberStatus` enum + 행위 메서드 + 도메인 예외 일부 제거(thin model: id/email/passwordHash/isActive/시점). (2) `application/member` 슬라이스 → Auth 편입. (3) 도메인 메트릭 sample 제거(`MetricRecorder` 포트 + `MicrometerMetricRecorder` 어댑터 + observability 디렉토리). (4) V1__init.sql 단순화(`status VARCHAR` → `is_active BOOLEAN`) + ADR-0018 박제(ADR-0012/0016 부분 supersede + starter scope 표 명시). 38 tests / 0 failures.
 
 ## Day 2 — 4단계 분할 계획
 
@@ -150,10 +151,22 @@
 `support/fixture/MemberFixture.kt` + `support/assertion/{MemberAssertions,JwtAssertions}.kt` 도입. AssertJ `satisfies(...)`와 `ThrowingConsumer<T>`로 도메인 단언을 한 줄에 박음. ADR-0017 박제.
 
 **박힌 결정 요약**:
-- fixture: `<Ctx>Fixture.kt` 패턴. default는 unique 이메일 + 결정론 시점. 상태는 도메인 행위 메서드로만(reflection 거부 — 캡슐화 §2).
-- assertion: Kotlin object + `ThrowingConsumer<T>` 채택. `AbstractAssert` 상속 거부(Kotlin·Java generic 상속 비대대성).
-- 죽은 코드 `ApplicationApiTest` 제거 — 미사용 메타 어노테이션은 fork된 사용자에게 잘못된 패턴 신호.
+- fixture: `<Ctx>Fixture.kt` 패턴. default는 unique 이메일 + 결정론 시점.
+- assertion: Kotlin object + `ThrowingConsumer<T>` 채택. `AbstractAssert` 상속 거부.
+- 죽은 코드 `ApplicationApiTest` 제거.
 - 새 도메인 추가 시 default checklist: `<Ctx>Fixture.kt` + `<Ctx>Assertions.kt` + 필요 시 `<Ctx>TestHelper.kt`.
+
+### Day 4-2. starter scope 명시 + thin user 모델 ✅
+
+사용자 검토(2026-05-08)로 Member 도메인 깊이 정리. ADR-0018에 starter scope 표(박는 것/박지 않는 것) 영구 박제. ADR-0012/0016 부분 supersede.
+
+**박힌 결정 요약**:
+- starter scope: 도메인 무관 골격 + 인증 인프라 + **최소 user 모델**(id/email/passwordHash/isActive/시점)만 박는다. 상태 enum/행위 메서드/VO/도메인-bound 포트 시그니처는 fork된 서비스가 도메인 진화 시 추가.
+- Member thin: Email VO 제거(Bean Validation `@Email @Size`로 대체), MemberStatus enum 제거(`isActive: Boolean`), activate/deactivate/ban 행위 제거, `MemberNotActive`/`MemberNotFound` 예외 제거.
+- application/member 슬라이스 → Auth 편입 (`application/auth/MemberRegistrationService`).
+- 도메인 메트릭 sample 제거 — `MetricRecorder` 포트 + `MicrometerMetricRecorder` 어댑터 + observability 디렉토리. Prometheus endpoint와 자동 메트릭은 유지(도메인 무관 인프라).
+- V1__init.sql `status VARCHAR(20)` → `is_active BOOLEAN`. ADR-0009의 "이미 적용된 V 수정 금지"는 운영 보호 목적이라 starter는 운영 이전 단계 단순 수정 허용.
+- 새 작업 도입 전 판단 룰: "도메인 무관 인프라인가, 아니면 sample 도메인에 한정되는가? 포트 시그니처에 도메인 단어가 박히지 않는가?"
 
 ### Day 3-4 / 후속. detekt 2.0 GA 모니터링 (외부 의존, 사용자 트리거 시에만)
 
