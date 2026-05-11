@@ -15,7 +15,7 @@ logstash-logback-encoder = "8.0"
 swagger-ui = "5.32.5"
 webjars-locator-core = "0.59"
 
-mockk = "1.13.13"
+mockk = "1.14.9"
 # Testcontainers도 BOM 정렬 (ADR-0011 패턴).
 testcontainers = "2.0.5"
 # 1.4.2부터 Java 25 bytecode 지원.
@@ -69,7 +69,7 @@ webjars-locator-core = { module = "org.webjars:webjars-locator-core", version.re
 spring-data-redis = { module = "org.springframework.data:spring-data-redis" }
 
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-spring-mockk = { module = "com.ninja-squad:springmockk", version = "4.0.2" }
+spring-mockk = { module = "com.ninja-squad:springmockk", version = "5.0.1" }
 # Testcontainers 2.0부터 모든 모듈에 'testcontainers-' prefix.
 testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 testcontainers-junit = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
