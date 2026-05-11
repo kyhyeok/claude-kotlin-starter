@@ -30,7 +30,7 @@ jobs:
       # gradle/actions/setup-gradle@v4는 gradle wrapper checksum을 자동 검증한다.
       # cache는 Gradle home + wrapper 디렉토리에 자동 적용.
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           validate-wrappers: true
 
